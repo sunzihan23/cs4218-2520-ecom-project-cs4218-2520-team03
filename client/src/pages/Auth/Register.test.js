@@ -8,6 +8,7 @@ import Register from './Register';
 
 // Mocking axios.post
 jest.mock('axios');
+
 jest.mock('react-hot-toast');
 
 jest.mock('../../context/auth', () => ({
@@ -18,9 +19,9 @@ jest.mock('../../context/auth', () => ({
     useCart: jest.fn(() => [null, jest.fn()]) // Mock useCart hook to return null state and a mock function
   }));
     
-jest.mock('../../context/search', () => ({
-    useSearch: jest.fn(() => [{ keyword: '' }, jest.fn()]) // Mock useSearch hook to return null state and a mock function
-  }));  
+  jest.mock('../../context/search', () => ({
+      useSearch: jest.fn(() => [{ keyword: '' }, jest.fn()]) // Mock useSearch hook to return null state and a mock function
+    }));  
 
   Object.defineProperty(window, 'localStorage', {
     value: {
@@ -44,9 +45,14 @@ describe('Register Component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
+  axios.get = jest.fn().mockResolvedValue({ data: [] });
+  beforeEach(() => {
+  axios.get?.mockResolvedValue({ data: [] });
+});
 
   it('should register the user successfully', async () => {
     axios.post.mockResolvedValueOnce({ data: { success: true } });
+    axios.get.mockResolvedValueOnce({ data: { category: [] } });
 
     const { getByText, getByPlaceholderText } = render(
         <MemoryRouter initialEntries={['/register']}>
