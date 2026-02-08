@@ -1,13 +1,36 @@
 import fs from "fs";
 import slugify from "slugify";
 import productModel from "../models/productModel.js";
-import {validateProductFields, attachPhotoIfPresent, saveProductService, createProductController, deleteProductController, updateProductController} from "./productController.js";
+import {
+    validateProductFields,
+    attachPhotoIfPresent,
+    saveProductService,
+    createProductController,
+    deleteProductController,
+    updateProductController,
+    getProductController,
+    getSingleProductController,
+    productPhotoController
+} from "./productController.js";
 
 jest.mock("fs", () => ({
     readFileSync: jest.fn(),
 }));
 jest.mock('slugify');
 jest.mock("../models/productModel.js");
+
+function makeThenableQuery(value) {
+    const chain = {
+        populate: jest.fn(() => chain),
+        select: jest.fn(() => chain),
+        limit: jest.fn(() => chain),
+        sort: jest.fn(() => chain),
+        skip: jest.fn(() => chain),
+        then: (resolve, reject) => Promise.resolve(value).then(resolve, reject),
+        catch: (reject) => Promise.resolve(value).catch(reject),
+    };
+    return chain;
+}
 
 function makeRes() {
     const res = {};
@@ -320,6 +343,259 @@ describe("createProductController", () => {
                 expect.objectContaining({
                     success: false,
                     message: "Error in creating product",
+                })
+            );
+        });
+    });
+});
+
+describe("getProductController", () => {
+    describe("upon successful call", () => {
+        let res;
+        let chain;
+        const products = [{ _id: 1 }, { _id: 2 }];
+
+        beforeEach(async () => {
+            res = makeRes();
+            chain = makeThenableQuery(products);
+            productModel.find.mockReturnValue(chain);
+            await getProductController({}, res);
+        });
+
+        test("calls find", () => {
+            expect(productModel.find).toHaveBeenCalledWith({});
+        });
+
+        test('populates category', () => {
+            expect(chain.populate).toHaveBeenCalledWith("category");
+        });
+
+        test('selects photo', () => {
+            expect(chain.select).toHaveBeenCalledWith("-photo");
+        });
+
+        test("limits to 12", () => {
+            expect(chain.limit).toHaveBeenCalledWith(12);
+        });
+
+        test("sorts by createdAt descending", () => {
+            expect(chain.sort).toHaveBeenCalledWith({ createdAt: -1 });
+        });
+
+        test("returns 200", () => {
+            expect(res.status).toHaveBeenCalledWith(200);
+        });
+
+        test("sends payload with countTotal==2", () => {
+            expect(res.send).toHaveBeenCalledWith(
+                expect.objectContaining({ countTotal: 2 })
+            );
+        });
+    });
+    describe("when unexpected error happens", () => {
+        let statusCode, sentBody;
+        beforeAll(async () => {
+            const res = {};
+            res.status = jest.fn((code) => ((statusCode = code), res));
+            res.send = jest.fn((body) => ((sentBody = body), res));
+            productModel.find.mockImplementation(() => {
+                throw new Error("get product fail");
+            });
+            await getProductController({}, res);
+        });
+        test("returns 500 status code", () => {
+            expect(statusCode).toBe(500);
+        });
+
+        test("sends error response", () => {
+            expect(sentBody).toEqual(
+                expect.objectContaining({
+                    success: false,
+                    message: "Error in getting products",
+                    error: "get product fail",
+                })
+            );
+        });
+    });
+});
+
+describe("getSingleProductController", () => {
+    describe("upon successful call", () => {
+        let res;
+        let chain;
+        const product = { _id: 10, slug: "abc" };
+
+        beforeEach(async () => {
+            res = makeRes();
+            chain = makeThenableQuery(product);
+            productModel.findOne.mockReturnValue(chain);
+            const req = { params: { slug: "abc" } };
+            await getSingleProductController(req, res);
+        });
+
+        test("calls findOne with slug filter", () => {
+            expect(productModel.findOne).toHaveBeenCalledWith({ slug: "abc" });
+        });
+
+        test('selects photo', () => {
+            expect(chain.select).toHaveBeenCalledWith("-photo");
+        });
+
+        test('populates category', () => {
+            expect(chain.populate).toHaveBeenCalledWith("category");
+        });
+
+        test("returns 200", () => {
+            expect(res.status).toHaveBeenCalledWith(200);
+        });
+
+        test("sends payload containing product", () => {
+            expect(res.send).toHaveBeenCalledWith(
+                expect.objectContaining({ product })
+            );
+        });
+    });
+    describe("when unexpected error happens", () => {
+        let statusCode, sentBody;
+        beforeAll(async () => {
+            const res = {};
+            res.status = jest.fn((code) => ((statusCode = code), res));
+            res.send = jest.fn((body) => ((sentBody = body), res));
+            const req = { params: { slug: "bad-slug" } };
+            productModel.findOne.mockImplementation(() => {
+                throw new Error("get single product fail");
+            });
+            await getSingleProductController(req, res);
+        });
+        test("returns 500 status code", () => {
+            expect(statusCode).toBe(500);
+        });
+        test("sends error response", () => {
+            expect(sentBody).toEqual(
+                expect.objectContaining({
+                    success: false,
+                    message: "Error while getting single product",
+                    error: "get single product fail",
+                })
+            );
+        });
+    });
+});
+
+describe("productPhotoController", () => {
+    describe("when product is not found", () => {
+        let statusCode, sentBody;
+        beforeAll(async () => {
+            const res = {
+                status: jest.fn((code) => ((statusCode = code), res)),
+                send: jest.fn((body) => ((sentBody = body), res)),
+                set: jest.fn(() => res),
+            };
+
+            productModel.findById.mockReturnValue({
+                select: jest.fn().mockResolvedValue(null),
+            });
+
+            const req = { params: { pid: "p1" } };
+
+            await productPhotoController(req, res);
+        });
+        test("returns 404 status code", () => {
+            expect(statusCode).toBe(404);
+        });
+        test("sends product not found response", () => {
+            expect(sentBody).toEqual(
+                expect.objectContaining({
+                    success: false,
+                    message: "Product not found",
+                })
+            );
+        });
+    });
+    describe("when product exists but product photo is missing", () => {
+        let statusCode, sentBody;
+        beforeAll(async () => {
+            const res = {
+                status: jest.fn((code) => ((statusCode = code), res)),
+                send: jest.fn((body) => ((sentBody = body), res)),
+                set: jest.fn(() => res),
+            };
+
+            const product = {};
+            productModel.findById.mockReturnValue({
+                select: jest.fn().mockResolvedValue(product),
+            });
+
+            const req = { params: { pid: "p1" } };
+            await productPhotoController(req, res);
+        });
+        test("returns 404 status code", () => {
+            expect(statusCode).toBe(404);
+        });
+        test("sends product photo not found response", () => {
+            expect(sentBody).toEqual(
+                expect.objectContaining({
+                    success: false,
+                    message: "Product Photo not found",
+                })
+            );
+        });
+    });
+    describe("upon successful call", () => {
+        let statusCode, sentData;
+        let setCalls;
+        beforeAll(async () => {
+            setCalls = [];
+            const res = {
+                status: jest.fn((code) => ((statusCode = code), res)),
+                send: jest.fn((body) => ((sentData = body), res)),
+                set: jest.fn((k, v) => (setCalls.push([k, v]), res)),
+            };
+            const buf = Buffer.from("img");
+            const product = {
+                photo: { data: buf, contentType: "image/png" },
+            };
+            productModel.findById.mockReturnValue({
+                select: jest.fn().mockResolvedValue(product),
+            });
+            const req = { params: { pid: "p1" } };
+            await productPhotoController(req, res);
+        });
+        test("set call params", () => {
+            expect(setCalls).toContainEqual(["Content-type", "image/png"]);
+        });
+
+        test("returns 200 status code", () => {
+            expect(statusCode).toBe(200);
+        });
+
+        test("sends photo buffer", () => {
+            expect(Buffer.isBuffer(sentData)).toBe(true);
+        });
+    });
+    describe("when unexpected error happens", () => {
+        let statusCode, sentBody;
+        beforeAll(async () => {
+            const res = {
+                status: jest.fn((code) => ((statusCode = code), res)),
+                send: jest.fn((body) => ((sentBody = body), res)),
+                set: jest.fn(() => res),
+            };
+            productModel.findById.mockImplementation(() => {
+                throw new Error("get product photo fail");
+            });
+            const req = { params: { pid: "p1" } };
+            await productPhotoController(req, res);
+        });
+        test("returns 500 status code", () => {
+            expect(statusCode).toBe(500);
+        });
+        test("sends error response", () => {
+            expect(sentBody).toEqual(
+                expect.objectContaining({
+                    success: false,
+                    message: "Error while getting photo",
+                    error: "get product photo fail",
                 })
             );
         });

@@ -27,7 +27,6 @@ export function attachPhotoIfPresent(productDoc, photo, readFile) {
   productDoc.photo.contentType = photo.type;
 }
 
-
 //helper to save product
 export async function saveProductService({ productDoc, fields, files, readFile }) {
   const validation = validateProductFields(fields, files);
@@ -77,15 +76,15 @@ export const getProductController = async (req, res) => {
         .sort({ createdAt: -1 });
     res.status(200).send({
       success: true,
-      counTotal: products.length,
+      countTotal: products.length,
       message: "ALlProducts ",
       products,
     });
   } catch (error) {
-    console.log(error);
+    console.log(error.message);
     res.status(500).send({
       success: false,
-      message: "Erorr in getting products",
+      message: "Error in getting products",
       error: error.message,
     });
   }
@@ -103,11 +102,11 @@ export const getSingleProductController = async (req, res) => {
       product,
     });
   } catch (error) {
-    console.log(error);
+    console.log(error.message);
     res.status(500).send({
       success: false,
-      message: "Eror while getitng single product",
-      error,
+      message: "Error while getting single product",
+      error: error.message,
     });
   }
 };
@@ -116,16 +115,28 @@ export const getSingleProductController = async (req, res) => {
 export const productPhotoController = async (req, res) => {
   try {
     const product = await productModel.findById(req.params.pid).select("photo");
+    if (!product) {
+      return res.status(404).send({
+          success: false,
+          message: "Product not found",
+          });
+      }
+    if (!product.photo) {
+      return res.status(404).send({
+        success: false,
+        message: "Product Photo not found",
+      });
+    }
     if (product.photo.data) {
       res.set("Content-type", product.photo.contentType);
       return res.status(200).send(product.photo.data);
     }
   } catch (error) {
-    console.log(error);
+    console.log(error.message);
     res.status(500).send({
       success: false,
-      message: "Erorr while getting photo",
-      error,
+      message: "Error while getting photo",
+      error: error.message,
     });
   }
 };
