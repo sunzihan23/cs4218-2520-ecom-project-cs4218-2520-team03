@@ -9,29 +9,27 @@ on:
       - main
 
 jobs:
-  test:
+  test-frontend:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Install client dependencies
-        run: |
+      - run: npm install
+      - run: |
           cd client
           npm install
+      - run: npm run test:frontend
 
-      - name: Run Frontend Jest Tests
-        run: npm run test:frontend
-
-      - name: Run Backend Jest Tests
-        run: npm run test:backend
+  test-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm install
+      - run: npm run test:backend
