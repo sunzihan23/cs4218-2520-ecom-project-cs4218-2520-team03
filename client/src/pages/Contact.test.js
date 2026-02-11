@@ -1,5 +1,5 @@
 import React from "react";
-import { getByTestId, render } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import "@testing-library/jest-dom/extend-expect";
 import Contact from "./Contact";
 
@@ -11,8 +11,8 @@ jest.mock("../components/Layout", () =>
             </h1>
             {children}
         </div>
-    }
-    ));
+    })
+);
 
 jest.mock("react-icons/bi", () => ({
     BiMailSend: () => {
@@ -28,7 +28,7 @@ jest.mock("react-icons/bi", () => ({
 
 describe("Contact Component", () => {
 
-    it("renders Layout wrapper", () => {
+    it("renders layout wrapper", () => {
         const { getByTestId } = render(<Contact />);
         expect(getByTestId("Layout")).toBeInTheDocument();
     });
