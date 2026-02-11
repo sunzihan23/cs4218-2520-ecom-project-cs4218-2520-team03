@@ -13,6 +13,7 @@ import {
     productPhotoController
 } from "./productController.js";
 
+//Chen Zhiruo A0256855N
 jest.mock("fs", () => ({
     readFileSync: jest.fn(),
 }));
