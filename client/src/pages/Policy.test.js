@@ -1,5 +1,6 @@
 import React from "react";
-import { render } from "@testing-library/react";
+import { render, fireEvent } from "@testing-library/react";
+import { MemoryRouter } from 'react-router-dom';
 import "@testing-library/jest-dom/extend-expect";
 import Policy from "./Policy";
 
@@ -19,7 +20,7 @@ describe("Policy Component", () => {
     it("renders layout wrapper", () => {
         const { getByTestId } = render(<Policy />);
         expect(getByTestId("Layout")).toBeInTheDocument();
-    })
+    });
 
     it("renders contact image", () => {
         const { getByAltText } = render(<Policy />);

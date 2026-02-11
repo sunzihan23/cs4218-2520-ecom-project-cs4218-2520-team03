@@ -14,12 +14,12 @@ jest.mock("../components/Layout", () =>
     })
 );
 
-describe("Policy Component", () => {
+describe("About Component", () => {
 
     it("renders layout wrapper", () => {
         const { getByTestId } = render(<About />);
         expect(getByTestId("Layout")).toBeInTheDocument();
-    })
+    });
 
     it("renders contact image", () => {
         const { getByAltText } = render(<About />);
