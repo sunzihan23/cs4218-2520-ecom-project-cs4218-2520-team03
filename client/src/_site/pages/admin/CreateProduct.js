@@ -48,7 +48,7 @@ const CreateProduct = () => {
       productData.append("category", category);
       const { data } = axios.post(
         "/api/v1/product/create-product",
-        productData
+        productData,
       );
       if (data?.success) {
         toast.error(data?.message);

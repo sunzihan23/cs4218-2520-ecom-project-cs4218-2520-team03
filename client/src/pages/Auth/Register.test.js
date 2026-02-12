@@ -21,7 +21,7 @@ jest.mock("./../../components/Layout", () => ({ children, title }) => (
 
 jest.mock('../../hooks/useCategory', () => jest.fn(() => []));
 
-describe('Register Component', () => {
+describe("Register Component", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.spyOn(console, 'warn').mockImplementation((msg) => {

@@ -22,6 +22,8 @@ export default {
   // only run these tests
   testMatch: [
     "<rootDir>/client/src/pages/Auth/*.test.js",
+    "<rootDir>/client/src/components/*.test.js",
+    "<rootDir>/client/src/pages/admin/*.test.js",
     "<rootDir>/client/src/pages/user/*.test.js"
   ],
 
@@ -29,6 +31,10 @@ export default {
   collectCoverage: true,
   collectCoverageFrom: [
     "client/src/pages/Auth/**",
+    "client/src/components/Form/CategoryForm.js",
+    "client/src/pages/admin/CreateCategory.js",
+    "client/src/pages/admin/CreateProduct.js",
+    "client/src/pages/admin/UpdateProduct.js",
     "client/src/pages/user/Profile.js"
   ],
   coverageThreshold: {
