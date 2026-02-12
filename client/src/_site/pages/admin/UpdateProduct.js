@@ -24,7 +24,7 @@ const UpdateProduct = () => {
   const getSingleProduct = async () => {
     try {
       const { data } = await axios.get(
-        `/api/v1/product/get-product/${params.slug}`
+        `/api/v1/product/get-product/${params.slug}`,
       );
       setName(data.product.name);
       setId(data.product._id);
@@ -72,7 +72,7 @@ const UpdateProduct = () => {
       productData.append("category", category);
       const { data } = axios.put(
         `/api/v1/product/update-product/${id}`,
-        productData
+        productData,
       );
       if (data?.success) {
         toast.error(data?.message);
@@ -92,7 +92,7 @@ const UpdateProduct = () => {
       let answer = window.prompt("Are You Sure want to delete this product ? ");
       if (!answer) return;
       const { data } = await axios.delete(
-        `/api/v1/product/delete-product/${id}`
+        `/api/v1/product/delete-product/${id}`,
       );
       toast.success("Product DEleted Succfully");
       navigate("/dashboard/admin/products");

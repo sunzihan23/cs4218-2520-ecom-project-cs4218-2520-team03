@@ -1,24 +1,26 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import AdminMenu from "../AdminMenu";
+import AdminMenu from "./AdminMenu";
 
 describe("Admin Menu Component", () => {
   test("renders admin panel heading", () => {
     render(
       <MemoryRouter>
         <AdminMenu />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
-    expect(screen.getByRole("heading", { name: /admin panel/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /admin panel/i }),
+    ).toBeInTheDocument();
   });
 
   test("renders all admin navigation links with correct routes", () => {
     render(
       <MemoryRouter>
         <AdminMenu />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     const links = [
@@ -38,9 +40,11 @@ describe("Admin Menu Component", () => {
     render(
       <MemoryRouter>
         <AdminMenu />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
-    expect(screen.queryByRole("link", { name: /users/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: /users/i }),
+    ).not.toBeInTheDocument();
   });
 });

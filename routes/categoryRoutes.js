@@ -16,7 +16,7 @@ router.post(
   "/create-category",
   requireSignIn,
   isAdmin,
-  createCategoryController
+  createCategoryController,
 );
 
 //update category
@@ -24,7 +24,7 @@ router.put(
   "/update-category/:id",
   requireSignIn,
   isAdmin,
-  updateCategoryController
+  updateCategoryController,
 );
 
 //getALl category
@@ -38,7 +38,7 @@ router.delete(
   "/delete-category/:id",
   requireSignIn,
   isAdmin,
-  deleteCategoryCOntroller
+  deleteCategoryCOntroller,
 );
 
 export default router;
