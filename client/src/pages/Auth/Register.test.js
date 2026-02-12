@@ -1,97 +1,141 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react';
 import axios from 'axios';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { MemoryRouter } from 'react-router-dom';
 import '@testing-library/jest-dom/extend-expect';
 import toast from 'react-hot-toast';
 import Register from './Register';
 
-// Mocking axios.post
 jest.mock('axios');
 jest.mock('react-hot-toast');
 
-jest.mock('../../context/auth', () => ({
-    useAuth: jest.fn(() => [null, jest.fn()]) // Mock useAuth hook to return null state and a mock function for setAuth
-  }));
+const mockedNavigate = jest.fn();
+jest.mock('react-router-dom', () => ({
+  ...jest.requireActual('react-router-dom'),
+  useNavigate: () => mockedNavigate,
+}));
 
-  jest.mock('../../context/cart', () => ({
-    useCart: jest.fn(() => [null, jest.fn()]) // Mock useCart hook to return null state and a mock function
-  }));
-    
-jest.mock('../../context/search', () => ({
-    useSearch: jest.fn(() => [{ keyword: '' }, jest.fn()]) // Mock useSearch hook to return null state and a mock function
-  }));  
+jest.mock("./../../components/Layout", () => ({ children, title }) => (
+  <div data-testid="layout" data-title={title}>{children}</div>
+));
 
-  Object.defineProperty(window, 'localStorage', {
-    value: {
-      setItem: jest.fn(),
-      getItem: jest.fn(),
-      removeItem: jest.fn(),
-    },
-    writable: true,
-  });
-
-window.matchMedia = window.matchMedia || function() {
-    return {
-      matches: false,
-      addListener: function() {},
-      removeListener: function() {}
-    };
-  };
-      
+jest.mock('../../hooks/useCategory', () => jest.fn(() => []));
 
 describe('Register Component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(console, 'warn').mockImplementation((msg) => {
+      if (msg.includes('React Router Future Flag Warning')) return;
+      console.warn(msg);
+    });
   });
 
-  it('should register the user successfully', async () => {
-    axios.post.mockResolvedValueOnce({ data: { success: true } });
-
-    const { getByText, getByPlaceholderText } = render(
-        <MemoryRouter initialEntries={['/register']}>
-          <Routes>
-            <Route path="/register" element={<Register />} />
-          </Routes>
-        </MemoryRouter>
-      );
-
-    fireEvent.change(getByPlaceholderText('Enter Your Name'), { target: { value: 'John Doe' } });
-    fireEvent.change(getByPlaceholderText('Enter Your Email'), { target: { value: 'test@example.com' } });
-    fireEvent.change(getByPlaceholderText('Enter Your Password'), { target: { value: 'password123' } });
-    fireEvent.change(getByPlaceholderText('Enter Your Phone'), { target: { value: '1234567890' } });
-    fireEvent.change(getByPlaceholderText('Enter Your Address'), { target: { value: '123 Street' } });
-    fireEvent.change(getByPlaceholderText('Enter Your DOB'), { target: { value: '2000-01-01' } });
-    fireEvent.change(getByPlaceholderText('What is Your Favorite sports'), { target: { value: 'Football' } });
-
-    fireEvent.click(getByText('REGISTER'));
-
-    await waitFor(() => expect(axios.post).toHaveBeenCalled());
-    expect(toast.success).toHaveBeenCalledWith('Register Successfully, please login');
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
-  it('should display error message on failed registration', async () => {
-    axios.post.mockRejectedValueOnce({ message: 'User already exists' });
+  const fillForm = (getByPlaceholderText) => {
+    fireEvent.change(getByPlaceholderText(/enter your name/i), { target: { value: 'John' } });
+    fireEvent.change(getByPlaceholderText(/enter your email/i), { target: { value: 'john@test.com' } });
+    fireEvent.change(getByPlaceholderText(/enter your password/i), { target: { value: 'password123' } });
+    fireEvent.change(getByPlaceholderText(/enter your phone/i), { target: { value: '98765432' } });
+    fireEvent.change(getByPlaceholderText(/enter your address/i), { target: { value: 'Address' } });
+    fireEvent.change(getByPlaceholderText(/enter your dob/i), { target: { value: '2000-01-01' } });
+    fireEvent.change(getByPlaceholderText(/favorite sports/i), { target: { value: 'Soccer' } });
+  };
 
+  it('should validate form attributes, input types, and state updates', async () => {
+    const { getByPlaceholderText, getByTestId, getByText } = render(<MemoryRouter><Register /></MemoryRouter>);
+    
+    expect(getByTestId('layout')).toHaveAttribute('data-title', 'Register - Ecommerce App');
+    expect(getByPlaceholderText(/enter your name/i)).toHaveFocus();
+
+    const placeholders = [
+        /enter your name/i, /enter your email/i, /enter your password/i,/enter your phone/i, 
+        /enter your address/i, /enter your dob/i, /favorite sports/i
+    ];
+    placeholders.forEach(ph => expect(getByPlaceholderText(ph)).toBeRequired());
+
+    expect(getByPlaceholderText(/enter your email/i)).toHaveAttribute('type', 'email');
+    expect(getByPlaceholderText(/enter your password/i)).toHaveAttribute('type', 'password');
+    expect(getByPlaceholderText(/enter your dob/i)).toHaveAttribute('type', 'date');
+
+    fillForm(getByPlaceholderText);
+    expect(getByPlaceholderText(/enter your name/i).value).toBe('John');
+    
+    expect(getByText('REGISTER')).toHaveAttribute('type', 'submit');
+  });
+
+  it('should register successfully, prevent default, and reset all form fields', async () => {
+    axios.post.mockResolvedValueOnce({ 
+      data: { success: true, message: "Registered Successfully, please login" } 
+    });
+    
     const { getByText, getByPlaceholderText } = render(
-        <MemoryRouter initialEntries={['/register']}>
-          <Routes>
-            <Route path="/register" element={<Register />} />
-          </Routes>
-        </MemoryRouter>
-      );
+      <MemoryRouter><Register /></MemoryRouter>
+    );
+    
+    fillForm(getByPlaceholderText);
 
-    fireEvent.change(getByPlaceholderText('Enter Your Name'), { target: { value: 'John Doe' } });
-    fireEvent.change(getByPlaceholderText('Enter Your Email'), { target: { value: 'test@example.com' } });
-    fireEvent.change(getByPlaceholderText('Enter Your Password'), { target: { value: 'password123' } });
-    fireEvent.change(getByPlaceholderText('Enter Your Phone'), { target: { value: '1234567890' } });
-    fireEvent.change(getByPlaceholderText('Enter Your Address'), { target: { value: '123 Street' } });
-    fireEvent.change(getByPlaceholderText('Enter Your DOB'), { target: { value: '2000-01-01' } });
-    fireEvent.change(getByPlaceholderText('What is Your Favorite sports'), { target: { value: 'Football' } });
+    const preventDefaultSpy = jest.spyOn(Event.prototype, 'preventDefault');
 
     fireEvent.click(getByText('REGISTER'));
+    expect(preventDefaultSpy).toHaveBeenCalled();
 
-    await waitFor(() => expect(axios.post).toHaveBeenCalled());
-    expect(toast.error).toHaveBeenCalledWith('Something went wrong');
+    await waitFor(() => expect(axios.post).toHaveBeenCalledWith(
+      "/api/v1/auth/register",
+      {
+        name: "John",
+        email: "john@test.com",
+        password: "password123",
+        phone: "98765432",
+        address: "Address",
+        DOB: "2000-01-01",
+        answer: "Soccer"
+      }
+    ));
+
+    expect(toast.success).toHaveBeenCalledWith('Registered Successfully, please login');
+    expect(mockedNavigate).toHaveBeenCalledWith("/login");
+
+    const allFields = [
+      /enter your name/i, /enter your email/i, /enter your password/i, /enter your phone/i, 
+      /enter your address/i, /enter your dob/i, /favorite sports/i
+    ];
+  
+    await waitFor(() => {
+      allFields.forEach((placeholder) => {
+        expect(getByPlaceholderText(placeholder).value).toBe("");
+      });
+    });
+
+    preventDefaultSpy.mockRestore();
+  });
+
+  it('should handle dynamic backend errors and fallback cases', async () => {
+    axios.post.mockResolvedValueOnce({ data: { success: false, message: 'Email already registered' } });
+    const { getByText, getByPlaceholderText } = render(<MemoryRouter><Register /></MemoryRouter>);
+
+    fillForm(getByPlaceholderText); 
+    fireEvent.click(getByText('REGISTER'));
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Email already registered'));
+
+    axios.post.mockResolvedValueOnce({ data: { success: false } });
+    fireEvent.click(getByText('REGISTER'));
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Something went wrong'));
+  });
+
+  it('should handle network failure and log error', async () => {
+    const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    axios.post.mockRejectedValueOnce(new Error('Network Error'));
+    
+    const { getByText, getByPlaceholderText } = render(<MemoryRouter><Register /></MemoryRouter>);
+    
+    fillForm(getByPlaceholderText); 
+    fireEvent.click(getByText('REGISTER'));
+
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Something went wrong'));
+    expect(consoleSpy).toHaveBeenCalled();
+    consoleSpy.mockRestore();
   });
 });
