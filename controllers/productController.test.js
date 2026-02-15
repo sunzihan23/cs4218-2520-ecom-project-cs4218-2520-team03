@@ -10,7 +10,11 @@ import {
     updateProductController,
     getProductController,
     getSingleProductController,
-    productPhotoController
+    productPhotoController,
+    productFiltersController,
+    productCountController,
+    productListController,
+    searchProductController,
 } from "./productController.js";
 
 //Chen Zhiruo A0256855N
@@ -39,14 +43,6 @@ function makeRes() {
     res.send = jest.fn().mockReturnValue(res);
     return res;
 }
-
-function makeReq({
-                     fields = {},
-                     files = {},
-                 } = {}) {
-    return { fields, files };
-}
-
 
 beforeEach(() => {
     jest.clearAllMocks();
@@ -83,10 +79,34 @@ describe("validateProductFields", () => {
             )
         ).toEqual({ status: 400, error: "Quantity is Required" });
     });
-    test("returns 400 when photo too large (> 1000000)", () => {
+    test("returns 400 when shipping missing", () => {
         expect(
             validateProductFields(
                 { name: "mockName", description: "mockDesc", price: 1, category: "mockCategory", quantity: 1 },
+                {}
+            )
+        ).toEqual({ status: 400, error: "Shipping is Required" });
+    });
+    test("returns null when shipping is falsy", () => {
+        expect(
+            validateProductFields(
+                { name: "mockName", description: "mockDesc", price: 1, category: "mockCategory", quantity: 1, shipping: false},
+                {}
+            )
+        ).toBeNull();
+    });
+    test("returns null when shipping is true", () => {
+        expect(
+            validateProductFields(
+                { name: "mockName", description: "mockDesc", price: 1, category: "mockCategory", quantity: 1, shipping: true},
+                {}
+            )
+        ).toBeNull();
+    });
+    test("returns 400 when photo too large (> 1000000)", () => {
+        expect(
+            validateProductFields(
+                { name: "mockName", description: "mockDesc", price: 1, category: "mockCategory", quantity: 1, shipping: true},
                 { photo: { size: 1_000_001 } }
             )
         ).toEqual({ status: 400, error: "Photo should be less then 1mb" });
@@ -94,7 +114,7 @@ describe("validateProductFields", () => {
     test("returns null when photo is 1mb", () => {
         expect(
             validateProductFields(
-                { name: "mockName", description: "mockDesc", price: 1, category: "mockCategory", quantity: 1 },
+                { name: "mockName", description: "mockDesc", price: 1, category: "mockCategory", quantity: 1, shipping: true},
                 { photo: { size: 1_000_000 } }
             )
         ).toBeNull();
@@ -102,7 +122,7 @@ describe("validateProductFields", () => {
     test("returns null when everything without a photo is valid", () => {
         expect(
             validateProductFields(
-                { name: "mockName", description: "mockDesc", price: 1, category: "mockCategory", quantity: 1 },
+                { name: "mockName", description: "mockDesc", price: 1, category: "mockCategory", quantity: 1, shipping: true},
                 {}
             )
         ).toBeNull();
@@ -110,7 +130,7 @@ describe("validateProductFields", () => {
     test("returns null when everything with a photo is valid", () => {
         expect(
             validateProductFields(
-                { name: "mockName", description: "mockDesc", price: 1, category: "mockCategory", quantity: 1 },
+                { name: "mockName", description: "mockDesc", price: 1, category: "mockCategory", quantity: 1, shipping: true},
                 { photo: { size: 1_000_000 } }
             )
         ).toBeNull();
@@ -179,6 +199,7 @@ describe("saveProductService", () => {
         price: 1,
         category: "mockCat",
         quantity: 1,
+        shipping: true
     };
     beforeEach(() => {
         jest.clearAllMocks();
@@ -296,7 +317,7 @@ describe("createProductController", () => {
         beforeEach(async () => {
             res = makeRes();
             req = {
-                fields: { name: "A", description: "D", price: 1, category: "C", quantity: 1 },
+                fields: { name: "A", description: "D", price: 1, category: "C", quantity: 1, shipping: true },
                 files: { photo: { path: "/tmp/p", type: "image/png", size: 100 } },
             };
 
@@ -705,7 +726,7 @@ describe("updateProductController", () => {
 
             req = {
                 params: { pid: "p1" },
-                fields: { name: "mockName", description: "mockDesc", price: 1, category: "mockCategory", quantity: 1 },
+                fields: { name: "mockName", description: "mockDesc", price: 1, category: "mockCategory", quantity: 1, shipping: true },
                 files: {},
             };
 
@@ -757,3 +778,177 @@ describe("updateProductController", () => {
     });
 });
 
+describe("productFiltersController", () => {
+    describe("filters by category when checked is non-empty", () => {
+        let res, req;
+        const products = [{ _id: 1 }, { _id: 2 }];
+        beforeEach(async () => {
+            res = makeRes();
+            req = { body: { checked: ["c1", "c2"], radio: [] } };
+            productModel.find.mockResolvedValue(products);
+            await productFiltersController(req, res);
+        });
+        test("calls find with category filter", () => {
+            expect(productModel.find).toHaveBeenCalledWith({ category: ["c1", "c2"] });
+        });
+        test("returns 200 with products", () => {
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.send).toHaveBeenCalledWith(expect.objectContaining({ success: true, products }));
+        });
+    });
+    describe("filters by price range when radio is provided", () => {
+        let res, req;
+        const products = [{ _id: 3 }];
+        beforeEach(async () => {
+            res = makeRes();
+            req = { body: { checked: [], radio: [10, 50] } };
+            productModel.find.mockResolvedValue(products);
+            await productFiltersController(req, res);
+        });
+        test("calls find with price range filter", () => {
+            expect(productModel.find).toHaveBeenCalledWith({ price: { $gte: 10, $lte: 50 } });
+        });
+        test("returns 200 with products", () => {
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.send).toHaveBeenCalledWith(expect.objectContaining({ success: true, products }));
+        });
+    });
+    describe("when unexpected error happens", () => {
+        let statusCode, sentBody;
+        beforeAll(async () => {
+            const res = {};
+            res.status = jest.fn((code) => ((statusCode = code), res));
+            res.send = jest.fn((body) => ((sentBody = body), res));
+            productModel.find.mockImplementation(() => { throw new Error("filter fail"); });
+            await productFiltersController({ body: { checked: [], radio: [] } }, res);
+        });
+        test("returns 500 status code", () => {
+            expect(statusCode).toBe(500);
+        });
+        test("sends error response", () => {
+            expect(sentBody).toEqual(expect.objectContaining({ success: false, message: "Error While Filtering Products" }));
+        });
+    });
+});
+
+describe("productCountController", () => {
+    describe("returns total count", () => {
+        let res;
+        beforeEach(async () => {
+            res = makeRes();
+            const chain = { estimatedDocumentCount: jest.fn().mockResolvedValue(42) };
+            productModel.find.mockReturnValue(chain);
+            await productCountController({}, res);
+        });
+        test("calls find with empty filter and then estimatedDocumentCount", () => {
+            expect(productModel.find).toHaveBeenCalledWith({});
+        });
+        test("returns 200 with total count", () => {
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.send).toHaveBeenCalledWith(expect.objectContaining({ success: true, total: 42 }));
+        });
+    });
+    describe("when unexpected error happens", () => {
+        let statusCode, sentBody;
+        beforeAll(async () => {
+            const res = {};
+            res.status = jest.fn((code) => ((statusCode = code), res));
+            res.send = jest.fn((body) => ((sentBody = body), res));
+            const chain = { estimatedDocumentCount: jest.fn(() => { throw new Error("count fail"); }) };
+            productModel.find.mockReturnValue(chain);
+            await productCountController({}, res);
+        });
+        test("returns 500 status code", () => {
+            expect(statusCode).toBe(500);
+        });
+        test("sends error response", () => {
+            expect(sentBody).toEqual(expect.objectContaining({ success: false, message: "Error in product count" }));
+        });
+    });
+});
+
+describe("productListController", () => {
+    describe("paginates results based on page param", () => {
+        let res, chain;
+        const products = [{}, {}, {}];
+        beforeEach(async () => {
+            res = makeRes();
+            chain = makeThenableQuery(products);
+            productModel.find.mockReturnValue(chain);
+            await productListController({ params: { page: 2 } }, res);
+        });
+        test("selects photo", () => {
+            expect(chain.select).toHaveBeenCalledWith("-photo");
+        });
+        test("skips correct number of documents for page 2 (6)", () => {
+            expect(chain.skip).toHaveBeenCalledWith(6);
+        });
+        test("limits to 6 per page", () => {
+            expect(chain.limit).toHaveBeenCalledWith(6);
+        });
+        test("sorts by createdAt desc", () => {
+            expect(chain.sort).toHaveBeenCalledWith({ createdAt: -1 });
+        });
+        test("returns 200 with products", () => {
+            expect(res.status).toHaveBeenCalledWith(200);
+            expect(res.send).toHaveBeenCalledWith(expect.objectContaining({ success: true, products }));
+        });
+    });
+    describe("when unexpected error happens", () => {
+        let statusCode, sentBody;
+        beforeAll(async () => {
+            const res = {};
+            res.status = jest.fn((code) => ((statusCode = code), res));
+            res.send = jest.fn((body) => ((sentBody = body), res));
+            productModel.find.mockImplementation(() => { throw new Error("list fail"); });
+            await productListController({ params: { page: 1 } }, res);
+        });
+        test("returns 500 status code", () => {
+            expect(statusCode).toBe(500);
+        });
+        test("sends error response", () => {
+            expect(sentBody).toEqual(expect.objectContaining({ success: false, message: "error in per page ctrl" }));
+        });
+    });
+});
+
+describe("searchProductController", () => {
+    describe("queries by keyword across name and description and returns results", () => {
+        let res, chain;
+        const results = [{ name: "phone" }];
+        beforeEach(async () => {
+            res = { json: jest.fn(), status: jest.fn().mockReturnValue(this), send: jest.fn() };
+            chain = makeThenableQuery(results);
+            productModel.find.mockReturnValue(chain);
+            await searchProductController({ params: { keyword: "phone" } }, res);
+        });
+        test("calls find with regex on name and description", () => {
+            expect(productModel.find).toHaveBeenCalledWith({
+                $or: [
+                    { name: { $regex: "phone", $options: "i" } },
+                    { description: { $regex: "phone", $options: "i" } },
+                ],
+            });
+        });
+        test("selects without photo and responds with json results", () => {
+            expect(chain.select).toHaveBeenCalledWith("-photo");
+            expect(res.json).toHaveBeenCalledWith(results);
+        });
+    });
+    describe("when unexpected error happens", () => {
+        let statusCode, sentBody;
+        beforeAll(async () => {
+            const res = {};
+            res.status = jest.fn((code) => ((statusCode = code), res));
+            res.send = jest.fn((body) => ((sentBody = body), res));
+            productModel.find.mockImplementation(() => { throw new Error("search fail"); });
+            await searchProductController({ params: { keyword: "x" } }, res);
+        });
+        test("returns 500 status code", () => {
+            expect(statusCode).toBe(500);
+        });
+        test("sends error response", () => {
+            expect(sentBody).toEqual(expect.objectContaining({ success: false, message: "Error In Search Product API" }));
+        });
+    });
+});
