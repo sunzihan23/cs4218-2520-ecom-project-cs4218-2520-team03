@@ -182,7 +182,7 @@ export const updateProfileController = async (req, res) => {
         phone: phone || user.phone,
         address: address || user.address,
       },
-      { new: true }
+      { new: true },
     );
     res.status(200).send({
       success: true,
@@ -243,7 +243,7 @@ export const orderStatusController = async (req, res) => {
     const orders = await orderModel.findByIdAndUpdate(
       orderId,
       { status },
-      { new: true }
+      { new: true },
     );
     res.json(orders);
   } catch (error) {
