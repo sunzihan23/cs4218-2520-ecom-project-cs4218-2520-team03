@@ -6,7 +6,7 @@ import slugify from "slugify";
 
 //helper to validate product info
 export function validateProductFields(fields, files) {
-  const { name, description, price, category, quantity } = fields || {};
+  const { name, description, price, category, quantity, shipping } = fields || {};
   const { photo } = files || {};
 
   if (!name) return { status: 400, error: "Name is Required" };
@@ -14,6 +14,7 @@ export function validateProductFields(fields, files) {
   if (!price) return { status: 400, error: "Price is Required" };
   if (!category) return { status: 400, error: "Category is Required" };
   if (!quantity) return { status: 400, error: "Quantity is Required" };
+  if (shipping === undefined) return { status: 400, error: "Shipping is Required" };
   if (photo && photo.size > 1_000_000)
     return { status: 400, error: "Photo should be less then 1mb" };
 
@@ -205,7 +206,7 @@ export const productFiltersController = async (req, res) => {
     console.log(error);
     res.status(400).send({
       success: false,
-      message: "Error WHile Filtering Products",
+      message: "Error While Filtering Products",
       error,
     });
   }
