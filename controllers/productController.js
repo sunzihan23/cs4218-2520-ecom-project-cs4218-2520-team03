@@ -6,7 +6,7 @@ import slugify from "slugify";
 
 //helper to validate product info
 export function validateProductFields(fields, files) {
-  const { name, description, price, category, quantity } = fields || {};
+  const { name, description, price, category, quantity, shipping } = fields || {};
   const { photo } = files || {};
 
   if (!name) return { status: 400, error: "Name is Required" };
@@ -14,6 +14,7 @@ export function validateProductFields(fields, files) {
   if (!price) return { status: 400, error: "Price is Required" };
   if (!category) return { status: 400, error: "Category is Required" };
   if (!quantity) return { status: 400, error: "Quantity is Required" };
+  if (shipping === undefined) return { status: 400, error: "Shipping is Required" };
   if (photo && photo.size > 1_000_000)
     return { status: 400, error: "Photo should be less then 1mb" };
 
@@ -210,10 +211,10 @@ export const productFiltersController = async (req, res) => {
       products,
     });
   } catch (error) {
-    console.log(error);
-    res.status(400).send({
+    console.log(error.message);
+    res.status(500).send({
       success: false,
-      message: "Error WHile Filtering Products",
+      message: "Error While Filtering Products",
       error,
     });
   }
@@ -228,8 +229,8 @@ export const productCountController = async (req, res) => {
       total,
     });
   } catch (error) {
-    console.log(error);
-    res.status(400).send({
+    console.log(error.message);
+    res.status(500).send({
       message: "Error in product count",
       error,
       success: false,
@@ -253,8 +254,8 @@ export const productListController = async (req, res) => {
       products,
     });
   } catch (error) {
-    console.log(error);
-    res.status(400).send({
+    console.log(error.message);
+    res.status(500).send({
       success: false,
       message: "error in per page ctrl",
       error,
@@ -266,18 +267,18 @@ export const productListController = async (req, res) => {
 export const searchProductController = async (req, res) => {
   try {
     const { keyword } = req.params;
-    const resutls = await productModel
-      .find({
-        $or: [
-          { name: { $regex: keyword, $options: "i" } },
-          { description: { $regex: keyword, $options: "i" } },
-        ],
-      })
-      .select("-photo");
-    res.json(resutls);
+    const results = await productModel
+        .find({
+          $or: [
+            { name: { $regex: keyword, $options: "i" } },
+            { description: { $regex: keyword, $options: "i" } },
+          ],
+        })
+        .select("-photo");
+    res.json(results);
   } catch (error) {
-    console.log(error);
-    res.status(400).send({
+    console.log(error.message);
+    res.status(500).send({
       success: false,
       message: "Error In Search Product API",
       error,
