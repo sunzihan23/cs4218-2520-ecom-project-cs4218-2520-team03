@@ -13,8 +13,8 @@ export default {
   collectCoverageFrom: ["controllers/productController.js"],
   coverageThreshold: {
     global: {
-      lines: 50,
-      functions: 50,
+      lines: 100,
+      functions: 100,
     },
   },
 };

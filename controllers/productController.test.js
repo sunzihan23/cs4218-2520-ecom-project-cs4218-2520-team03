@@ -1,6 +1,7 @@
 import fs from "fs";
 import slugify from "slugify";
 import productModel from "../models/productModel.js";
+import categoryModel from "../models/categoryModel.js";
 import {
     validateProductFields,
     attachPhotoIfPresent,
@@ -15,6 +16,8 @@ import {
     productCountController,
     productListController,
     searchProductController,
+    relatedProductController,
+    productCategoryController,
 } from "./productController.js";
 
 //Chen Zhiruo A0256855N
@@ -23,6 +26,7 @@ jest.mock("fs", () => ({
 }));
 jest.mock("slugify");
 jest.mock("../models/productModel.js");
+jest.mock("../models/categoryModel.js");
 
 function makeThenableQuery(value) {
   const chain = {
@@ -970,4 +974,102 @@ describe("searchProductController", () => {
             expect(sentBody).toEqual(expect.objectContaining({success: false, message: "Error In Search Product API"}));
         });
     });
+});
+
+describe("relatedProductController", () => {
+  describe("upon successful call", () => {
+    let res, chain;
+    const products = [{ _id: 1 }, { _id: 2 }];
+    beforeEach(async () => {
+      res = makeRes();
+      chain = makeThenableQuery(products);
+      productModel.find.mockReturnValue(chain);
+      const req = { params: { pid: "mockProduct", cid: "mockCategory" } };
+      await relatedProductController(req, res);
+    });
+    test("calls find with category and $ne filter", () => {
+      expect(productModel.find).toHaveBeenCalledWith({ category: "mockCategory", _id: { $ne: "mockProduct" } });
+    });
+    test("selects without photo, limits to 3, populates category", () => {
+      expect(chain.select).toHaveBeenCalledWith("-photo");
+      expect(chain.limit).toHaveBeenCalledWith(3);
+      expect(chain.populate).toHaveBeenCalledWith("category");
+    });
+    test("returns 200 with products", () => {
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.send).toHaveBeenCalledWith(expect.objectContaining({ success: true, products }));
+    });
+  });
+  describe("when unexpected error happens", () => {
+    let statusCode, sentBody;
+    beforeAll(async () => {
+      const res = {};
+      res.status = jest.fn((code) => ((statusCode = code), res));
+      res.send = jest.fn((body) => ((sentBody = body), res));
+      productModel.find.mockImplementation(() => { throw new Error("related products fail"); });
+      await relatedProductController({ params: { pid: "mockProduct", cid: "mockController" } }, res);
+    });
+    test("returns 500 status code", () => {
+      expect(statusCode).toBe(500);
+    });
+    test("sends error response", () => {
+      expect(sentBody).toEqual(expect.objectContaining({ success: false, message: "Error while getting related product" }));
+    });
+  });
+});
+
+describe("productCategoryController", () => {
+  describe("when category not found", () => {
+    let res;
+    beforeEach(async () => {
+      res = makeRes();
+      categoryModel.findOne.mockResolvedValue(null);
+      await productCategoryController({ params: { slug: "unknown" } }, res);
+    });
+    test("returns 404 status code", () => {
+      expect(res.status).toHaveBeenCalledWith(404);
+    });
+    test("sends category not found message", () => {
+      expect(res.send).toHaveBeenCalledWith(expect.objectContaining({ success: false, message: "Category not found" }));
+    });
+  });
+  describe("upon successful call", () => {
+    let res, chain;
+    const category = { _id: "mockCategory", slug: "cat" };
+    const products = [{ _id: 10 }];
+    beforeEach(async () => {
+      res = makeRes();
+      categoryModel.findOne.mockResolvedValue(category);
+      chain = makeThenableQuery(products);
+      productModel.find.mockReturnValue(chain);
+      await productCategoryController({ params: { slug: "cat" } }, res);
+    });
+    test("finds category by slug", () => {
+      expect(categoryModel.findOne).toHaveBeenCalledWith({ slug: "cat" });
+    });
+    test("fetches products by category id and populates category", () => {
+      expect(productModel.find).toHaveBeenCalledWith({ category: "mockCategory" });
+      expect(chain.populate).toHaveBeenCalledWith("category");
+    });
+    test("returns 200 with category and products", () => {
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.send).toHaveBeenCalledWith(expect.objectContaining({ success: true, category, products }));
+    });
+  });
+  describe("when unexpected error happens", () => {
+    let statusCode, sentBody;
+    beforeAll(async () => {
+      const res = {};
+      res.status = jest.fn((code) => ((statusCode = code), res));
+      res.send = jest.fn((body) => ((sentBody = body), res));
+      categoryModel.findOne.mockImplementation(() => { throw new Error("category fail"); });
+      await productCategoryController({ params: { slug: "cat" } }, res);
+    });
+    test("returns 500 status code", () => {
+      expect(statusCode).toBe(500);
+    });
+    test("sends error response", () => {
+      expect(sentBody).toEqual(expect.objectContaining({ success: false, message: "Error In Getting Products in a Category" }));
+    });
+  });
 });

@@ -66,7 +66,7 @@ export const createProductController = async (req, res) => {
     console.log(error.message);
     return res.status(500).send({
       success: false,
-      error,
+      error: error.message,
       message: "Error in creating product",
     });
   }
@@ -161,7 +161,7 @@ export const deleteProductController = async (req, res) => {
     res.status(500).send({
       success: false,
       message: "Error while deleting product",
-      error,
+      error: error.message,
     });
   }
 };
@@ -192,7 +192,7 @@ export const updateProductController = async (req, res) => {
     console.log(error.message);
     return res.status(500).send({
       success: false,
-      error,
+      error: error.message,
       message: "Error in updating product",
     });
   }
@@ -215,7 +215,7 @@ export const productFiltersController = async (req, res) => {
     res.status(500).send({
       success: false,
       message: "Error While Filtering Products",
-      error,
+      error: error.message,
     });
   }
 };
@@ -232,7 +232,7 @@ export const productCountController = async (req, res) => {
     console.log(error.message);
     res.status(500).send({
       message: "Error in product count",
-      error,
+      error: error.message,
       success: false,
     });
   }
@@ -258,7 +258,7 @@ export const productListController = async (req, res) => {
     res.status(500).send({
       success: false,
       message: "error in per page ctrl",
-      error,
+      error: error.message,
     });
   }
 };
@@ -281,13 +281,13 @@ export const searchProductController = async (req, res) => {
     res.status(500).send({
       success: false,
       message: "Error In Search Product API",
-      error,
+      error: error.message,
     });
   }
 };
 
 // similar products
-export const realtedProductController = async (req, res) => {
+export const relatedProductController = async (req, res) => {
   try {
     const { pid, cid } = req.params;
     const products = await productModel
@@ -303,11 +303,11 @@ export const realtedProductController = async (req, res) => {
       products,
     });
   } catch (error) {
-    console.log(error);
-    res.status(400).send({
+    console.log(error.message);
+    res.status(500).send({
       success: false,
-      message: "error while geting related product",
-      error,
+      message: "Error while getting related product",
+      error: error.message,
     });
   }
 };
@@ -316,18 +316,24 @@ export const realtedProductController = async (req, res) => {
 export const productCategoryController = async (req, res) => {
   try {
     const category = await categoryModel.findOne({ slug: req.params.slug });
-    const products = await productModel.find({ category }).populate("category");
+    if (!category) {
+      return res.status(404).send({
+        success: false,
+        message: "Category not found",
+      });
+    }
+    const products = await productModel.find({ category: category._id }).populate("category");
     res.status(200).send({
       success: true,
       category,
       products,
     });
   } catch (error) {
-    console.log(error);
-    res.status(400).send({
+    console.log(error.message);
+    res.status(500).send({
       success: false,
-      error,
-      message: "Error While Getting products",
+      error: error.message,
+      message: "Error In Getting Products in a Category",
     });
   }
 };
