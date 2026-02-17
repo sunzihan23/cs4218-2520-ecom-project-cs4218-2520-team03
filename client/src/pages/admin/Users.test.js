@@ -35,7 +35,7 @@ describe("<Users />", () => {
   test('renders the "All Users" heading', () => {
     render(<Users />);
     expect(
-      screen.getByRole("heading", { name: /all users/i, level: 1 })
+      screen.getByRole("heading", { name: /all users/i, level: 1 }),
     ).toBeInTheDocument();
   });
 

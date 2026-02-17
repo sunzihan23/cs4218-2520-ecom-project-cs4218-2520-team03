@@ -1,3 +1,4 @@
+// Trinh Hoai Song Thu, A0266248W
 import categoryModel from "../models/categoryModel.js";
 import slugify from "slugify";
 import {
@@ -63,7 +64,11 @@ describe("testcreateCategoryController", () => {
     categoryModel.findOne.mockResolvedValue(null);
     slugify.mockReturnValue("necessities");
 
-    const savedCategory = { _id: "c2", name: "Necessities", slug: "necessities" };
+    const savedCategory = {
+      _id: "c2",
+      name: "Necessities",
+      slug: "necessities",
+    };
     const save = jest.fn().mockResolvedValue(savedCategory);
     categoryModel.mockImplementation(function (doc) {
       return { ...doc, save };
@@ -72,8 +77,14 @@ describe("testcreateCategoryController", () => {
     await createCategoryController(req, res);
 
     expect(categoryModel.findOne).toHaveBeenCalledWith({ name: "Necessities" });
-    expect(slugify).toHaveBeenCalledWith("Necessities", { lower: true, strict: true });
-    expect(categoryModel).toHaveBeenCalledWith({ name: "Necessities", slug: "necessities" });
+    expect(slugify).toHaveBeenCalledWith("Necessities", {
+      lower: true,
+      strict: true,
+    });
+    expect(categoryModel).toHaveBeenCalledWith({
+      name: "Necessities",
+      slug: "necessities",
+    });
     expect(save).toHaveBeenCalledTimes(1);
 
     expect(res.status).toHaveBeenCalledWith(201);
@@ -118,11 +129,18 @@ describe("test updateCategoryController", () => {
   });
 
   test("returns status code 200 on successful category update", async () => {
-    const req = { body: { name: "  Updated Electronics  " }, params: { id: "id1" } };
+    const req = {
+      body: { name: "  Updated Electronics  " },
+      params: { id: "id1" },
+    };
     const res = makeRes();
 
     slugify.mockReturnValue("updated-electronics");
-    const updated = { _id: "id1", name: "Updated Electronics", slug: "updated-electronics" };
+    const updated = {
+      _id: "id1",
+      name: "Updated Electronics",
+      slug: "updated-electronics",
+    };
     categoryModel.findByIdAndUpdate.mockResolvedValue(updated);
 
     await updateCategoryController(req, res);
@@ -179,7 +197,7 @@ describe("test categoryController (get all)", () => {
     });
   });
 
-  test("returns status code500 when unexpected error happens", async () => {
+  test("returns status code 500 when unexpected error happens", async () => {
     const req = {};
     const res = makeRes();
 

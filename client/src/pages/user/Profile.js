@@ -36,7 +36,7 @@ const Profile = () => {
       });
       // Sun Zihan, A0259581R
       // correct typo
-      if (data?.error) { 
+      if (data?.error) {
         toast.error(data?.error);
       } else {
         setAuth({ ...auth, user: data?.updatedUser });

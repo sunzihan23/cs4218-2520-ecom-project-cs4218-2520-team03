@@ -5,6 +5,7 @@ import { BrowserRouter } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
 import UpdateProduct from "./UpdateProduct";
+import { mock } from "node:test";
 
 jest.mock("axios");
 jest.mock("react-hot-toast");
@@ -151,6 +152,7 @@ describe("UpdateProduct Component", () => {
   });
 
   test("should handle update product form submission", async () => {
+    global.URL.createObjectURL = jest.fn(() => "mock-url");
     axios.get
       .mockResolvedValueOnce({ data: { product: mockProduct } })
       .mockResolvedValueOnce({
@@ -187,6 +189,13 @@ describe("UpdateProduct Component", () => {
 
     fireEvent.change(categorySelect, { target: { value: "2" } });
     fireEvent.change(shippingSelect, { target: { value: "true" } });
+    const file = new File(["photo"], "photo.png", { type: "image/png" });
+    const uploadLabel = screen.getByText("Upload Photo");
+    const input = uploadLabel
+      .closest("label")
+      .querySelector('input[type="file"]');
+
+    fireEvent.change(input, { target: { files: [file] } });
 
     fireEvent.click(screen.getByText("UPDATE PRODUCT"));
 
@@ -296,7 +305,7 @@ describe("UpdateProduct Component", () => {
     });
   });
 
-  test("shows error toast on update failure exception", async () => {
+  test("shows error toast on missing fields when update product", async () => {
     axios.get
       .mockResolvedValueOnce({ data: { product: mockProduct } })
       .mockResolvedValueOnce({
@@ -314,20 +323,20 @@ describe("UpdateProduct Component", () => {
     fireEvent.click(screen.getByText("UPDATE PRODUCT"));
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith("something went wrong");
+      expect(toast.error).toHaveBeenCalledWith(
+        "Please fill all required fields",
+      );
     });
   });
 
-  test("shows error toast on update failed response", async () => {
+  test("shows error toast on invalid price update product", async () => {
     axios.get
       .mockResolvedValueOnce({ data: { product: mockProduct } })
       .mockResolvedValueOnce({
         data: { success: true, category: mockCategories },
       });
 
-    axios.put.mockResolvedValueOnce({
-      data: { success: false, message: "Update failed" },
-    });
+    axios.put.mockRejectedValueOnce(new Error("Update failed"));
 
     renderComponent();
 
@@ -335,48 +344,40 @@ describe("UpdateProduct Component", () => {
       expect(screen.getByText("UPDATE PRODUCT")).toBeInTheDocument();
     });
 
+    fireEvent.change(screen.getByPlaceholderText("write a Price"), {
+      target: { value: "-10" },
+    });
     fireEvent.click(screen.getByText("UPDATE PRODUCT"));
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith("Update product failed");
+      expect(toast.error).toHaveBeenCalledWith("Price must be greater than 0");
     });
   });
 
-  test("replaces existing photo when a new photo is selected", async () => {
-    global.URL.createObjectURL = jest.fn(() => "blob:mock-url");
-
+  test("shows error toast on invalid quantity update product", async () => {
     axios.get
+      .mockResolvedValueOnce({ data: { product: mockProduct } })
       .mockResolvedValueOnce({
-        data: {
-          product: {
-            _id: "1",
-            name: "",
-            description: "",
-            price: "",
-            quantity: "",
-            shipping: false,
-            category: { _id: "c1" },
-          },
-        },
-      })
-      .mockResolvedValueOnce({ data: { success: true, category: [] } });
+        data: { success: true, category: mockCategories },
+      });
 
-    axios.put.mockResolvedValueOnce({ data: { success: true } });
-
-    const appendMock = jest.fn();
-    global.FormData = jest.fn(() => ({ append: appendMock }));
+    axios.put.mockRejectedValueOnce(new Error("Update failed"));
 
     renderComponent();
 
-    const file = new File(["photo"], "photo.png", { type: "image/png" });
-    const input = document.querySelector('input[type="file"]');
+    await waitFor(() => {
+      expect(screen.getByText("UPDATE PRODUCT")).toBeInTheDocument();
+    });
 
-    fireEvent.change(input, { target: { files: [file] } });
-    await screen.findByText("photo.png");
+    fireEvent.change(screen.getByPlaceholderText("write a quantity"), {
+      target: { value: "-5" },
+    });
     fireEvent.click(screen.getByText("UPDATE PRODUCT"));
 
     await waitFor(() => {
-      expect(appendMock).toHaveBeenCalledWith("photo", file);
+      expect(toast.error).toHaveBeenCalledWith(
+        "Quantity must be greater than or equal to 0",
+      );
     });
   });
 
@@ -404,6 +405,36 @@ describe("UpdateProduct Component", () => {
     fireEvent.change(shippingSelect, { target: { value: "false" } });
     await waitFor(() => {
       expect(shippingSelect.value).toBe("false");
+    });
+  });
+
+  test("shows error toast on update failure", async () => {
+    axios.get
+      .mockResolvedValueOnce({ data: { product: mockProduct } })
+      .mockResolvedValueOnce({
+        data: { success: true, category: mockCategories },
+      });
+
+    axios.put.mockRejectedValueOnce(new Error("Update failed"));
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText("UPDATE PRODUCT")).toBeInTheDocument();
+      expect(screen.getByPlaceholderText("write a name")).toHaveValue(
+        mockProduct.name,
+      );
+      expect(screen.getByPlaceholderText("write a description")).toHaveValue(
+        mockProduct.description,
+      );
+      expect(screen.getByPlaceholderText("write a Price")).toHaveValue(100);
+      expect(screen.getByPlaceholderText("write a quantity")).toHaveValue(10);
+    });
+
+    fireEvent.click(screen.getByText("UPDATE PRODUCT"));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("something went wrong");
     });
   });
 });

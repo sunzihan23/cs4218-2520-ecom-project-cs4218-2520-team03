@@ -4,7 +4,9 @@ export const createCategoryController = async (req, res) => {
   try {
     const name = req.body?.name?.trim();
     if (!name) {
-      return res.status(400).send({ success: false, message: "Name is required" });
+      return res
+        .status(400)
+        .send({ success: false, message: "Name is required" });
     }
     const existingCategory = await categoryModel.findOne({ name });
     if (existingCategory) {
@@ -38,7 +40,9 @@ export const updateCategoryController = async (req, res) => {
     const name = req.body?.name?.trim();
     const { id } = req.params;
     if (!name) {
-      return res.status(400).send({ success: false, message: "Name is required" });
+      return res
+        .status(400)
+        .send({ success: false, message: "Name is required" });
     }
     const category = await categoryModel.findByIdAndUpdate(
       id,
