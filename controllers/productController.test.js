@@ -4,7 +4,7 @@ import productModel from "../models/productModel.js";
 import categoryModel from "../models/categoryModel.js";
 import {
     validateProductFields,
-    attachPhotoIfPresent,
+    attachPhoto,
     saveProductService,
     createProductController,
     deleteProductController,
@@ -53,6 +53,21 @@ beforeEach(() => {
 });
 
 describe("validateProductFields", () => {
+    test("returns 400 with undefined fields", () => {
+        expect(validateProductFields(undefined, {})).toEqual({
+            status: 400,
+            error: "Name is Required",
+        });
+    });
+    test("returns 400 with undefined files", () => {
+        expect(    validateProductFields(
+            { name: "mockName", description: "mockDesc", price: 1, category: "mockCategory", quantity: 1, shipping: true },
+            undefined
+        )).toEqual({
+            status: 400,
+            error: "Photo is Required",
+        });
+    });
     test("returns 400 when name missing", () => {
         expect(validateProductFields({}, {})).toEqual({
             status: 400,
@@ -95,7 +110,7 @@ describe("validateProductFields", () => {
         expect(
             validateProductFields(
                 { name: "mockName", description: "mockDesc", price: 1, category: "mockCategory", quantity: 1, shipping: false},
-                {}
+                {photo: { size: 999_999 }}
             )
         ).toBeNull();
     });
@@ -103,7 +118,7 @@ describe("validateProductFields", () => {
         expect(
             validateProductFields(
                 { name: "mockName", description: "mockDesc", price: 1, category: "mockCategory", quantity: 1, shipping: true},
-                {}
+                {photo: { size: 999_999 }}
             )
         ).toBeNull();
     });
@@ -123,15 +138,7 @@ describe("validateProductFields", () => {
             )
         ).toBeNull();
     });
-    test("returns null when everything without a photo is valid", () => {
-        expect(
-            validateProductFields(
-                { name: "mockName", description: "mockDesc", price: 1, category: "mockCategory", quantity: 1, shipping: true},
-                {}
-            )
-        ).toBeNull();
-    });
-    test("returns null when everything with a photo is valid", () => {
+    test("returns null on successful call", () => {
         expect(
             validateProductFields(
                 { name: "mockName", description: "mockDesc", price: 1, category: "mockCategory", quantity: 1, shipping: true},
@@ -141,42 +148,16 @@ describe("validateProductFields", () => {
     });
 });
 
-describe("attachPhotoIfPresent", () => {
-  describe("when no photo is provided", () => {
-    let productDoc;
-    let readFile;
-    beforeEach(() => {
-      //arrange
-      productDoc = { photo: { data: null, contentType: null } };
-      readFile = jest.fn();
-      //act
-      attachPhotoIfPresent(productDoc, null, readFile);
-    });
-
-    test("readFile won't be called", () => {
-      expect(readFile).not.toHaveBeenCalled();
-    });
-
-    test("product's photo data stays null", () => {
-      expect(productDoc.photo.data).toBeNull();
-    });
-
-    test("product's photo contentType stays null", () => {
-      expect(productDoc.photo.contentType).toBeNull();
-    });
-  });
-  describe("when photo is provided", () => {
+describe("attachPhoto", () => {
     let productDoc;
     let readFile;
     let buf;
-    //arrange
     beforeEach(() => {
-      //arrange
       productDoc = { photo: {} };
       readFile = jest.fn(() => buf);
       buf = Buffer.from("abc");
       //act
-      attachPhotoIfPresent(
+      attachPhoto(
         productDoc,
         { path: "/tmp/x", type: "image/png" },
         readFile,
@@ -191,7 +172,6 @@ describe("attachPhotoIfPresent", () => {
     test("product photo content type to be image", () => {
       expect(productDoc.photo.contentType).toBe("image/png");
     });
-  });
 });
 
 describe("saveProductService", () => {
@@ -250,7 +230,7 @@ describe("saveProductService", () => {
       expect(readFile).not.toHaveBeenCalled();
     });
   });
-  describe("when validation passes with photo", () => {
+    describe("when validation passes", () => {
     let productDoc, readFile, files;
     beforeEach(async () => {
       productDoc = {
@@ -279,34 +259,6 @@ describe("saveProductService", () => {
 
     test("calls readFile with photo.path", () => {
       expect(readFile).toHaveBeenCalledWith("/tmp/p.png");
-    });
-
-    test("calls productDoc.save", () => {
-      expect(productDoc.save).toHaveBeenCalledTimes(1);
-    });
-  });
-  describe("when validation passes without photo", () => {
-    let productDoc, readFile, files;
-
-    beforeEach(async () => {
-      productDoc = makeProductDoc();
-      readFile = jest.fn();
-      files = {};
-
-      await saveProductService({
-        productDoc,
-        fields: validFields,
-        files,
-        readFile,
-      });
-    });
-
-    test("calls productDoc.set", () => {
-      expect(productDoc.set).toHaveBeenCalledTimes(1);
-    });
-
-    test("does not call readFile", () => {
-      expect(readFile).not.toHaveBeenCalled();
     });
 
     test("calls productDoc.save", () => {
@@ -656,145 +608,143 @@ describe("deleteProductController", () => {
         test("calls findByIdAndDelete with pid", () => {
             expect(productModel.findByIdAndDelete).toHaveBeenCalledWith("p1");
         });
-
-        describe("updateProductController", () => {
-            describe("when product not found", () => {
-                let res;
-                beforeEach(async () => {
-                    res = makeRes();
-                    productModel.findById.mockResolvedValue(null);
-                    await updateProductController({params: {pid: "p1"}, fields: {}, files: {}}, res);
-                });
-                test("return status 404", async () => {
-                    expect(res.status).toHaveBeenCalledWith(404);
-                });
-                test("error response sent", async () => {
-                    expect(res.send).toHaveBeenCalledWith({error: "Product not found"});
-                });
-            });
-            describe("when updating invalid product", () => {
-                let res;
-                beforeEach(async () => {
-                    res = makeRes();
-                    const productDoc = {set: jest.fn(), save: jest.fn(), photo: {}};
-                    productModel.findById.mockResolvedValue(productDoc);
-
-                    await updateProductController({params: {pid: "p1"}, fields: {}, files: {}}, res);
-                });
-                test("return status 400", async () => {
-                    expect(res.status).toHaveBeenCalledWith(400);
-                });
-                test("error response", async () => {
-                    expect(res.send).toHaveBeenCalledWith({error: "Name is Required"});
-                });
-            });
-            describe("upon successful product update", () => {
-                let res, req, productDoc;
-                beforeEach(async () => {
-                    res = makeRes();
-                    productDoc = {set: jest.fn(), save: jest.fn(), photo: {}};
-                    productModel.findById.mockResolvedValue(productDoc);
-
-                    req = {
-                        params: {pid: "p1"},
-                        fields: {
-                            name: "mockName",
-                            description: "mockDesc",
-                            price: 1,
-                            category: "mockCategory",
-                            quantity: 1,
-                            shipping: true
-                        },
-                        files: {},
-                    };
-
-                    await updateProductController(req, res);
-                });
-                test("return 200 status code", async () => {
-                    expect(res.status).toHaveBeenCalledWith(200);
-                });
-                test("success response sent with object containing updated product", async () => {
-                    expect(res.send).toHaveBeenCalledWith(
-                        expect.objectContaining({
-                            success: true,
-                            message: "Product Updated Successfully",
-                            products: productDoc,
-                        })
-                    );
-                });
-            });
-            describe("when unexpected error happens", () => {
-                let statusCode, sentBody;
-                beforeAll(async () => {
-                    const res = {};
-                    res.status = jest.fn((code) => {
-                        statusCode = code;
-                        return res;
-                    });
-                    res.send = jest.fn((body) => {
-                        sentBody = body;
-                        return res;
-                    });
-                    productModel.findById.mockRejectedValue(new Error("update fail"));
-
-                    await updateProductController(
-                        {params: {pid: "p1"}, fields: {}, files: {}},
-                        res
-                    );
-                });
-                test("returns 500 status code", () => {
-                    expect(statusCode).toBe(500);
-                });
-                test("sends error response", () => {
-                    expect(sentBody).toEqual(
-                        expect.objectContaining({
-                            success: false,
-                            message: "Error in updating product",
-                        })
-                    );
-                });
-            });
-
-            test("returns 200 status code", () => {
-                expect(res.status).toHaveBeenCalledWith(200);
-            });
-
-            test("sends success response", () => {
-                expect(res.send).toHaveBeenCalledWith(
-                    expect.objectContaining({
-                        success: true,
-                        message: "Product Deleted successfully",
-                    }),
-                );
-            });
+        test("returns 200 status code", () => {
+            expect(res.status).toHaveBeenCalledWith(200);
         });
-        describe("when unexpected error happens", () => {
-            let statusCode, sentBody;
-            beforeAll(async () => {
-                const res = {};
-                res.status = jest.fn((code) => ((statusCode = code), res));
-                res.send = jest.fn((body) => ((sentBody = body), res));
+        test("sends success response", () => {
+            expect(res.send).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    success: true,
+                    message: "Product Deleted successfully",
+                }),
+            );
+        });
+    });
+    describe("when unexpected error happens", () => {
+        let statusCode, sentBody;
+        beforeAll(async () => {
+            const res = {};
+            res.status = jest.fn((code) => ((statusCode = code), res));
+            res.send = jest.fn((body) => ((sentBody = body), res));
 
-                const req = {params: {pid: "p1"}};
+            const req = {params: {pid: "p1"}};
 
-                productModel.findByIdAndDelete.mockImplementation(() => {
-                    throw new Error("delete fail");
-                });
-
-                await deleteProductController(req, res);
+            productModel.findByIdAndDelete.mockImplementation(() => {
+                throw new Error("delete fail");
             });
-            test("returns 500 status code", () => {
-                expect(statusCode).toBe(500);
-            });
 
-            test("sends error response", () => {
-                expect(sentBody).toEqual(
-                    expect.objectContaining({
-                        success: false,
-                        message: "Error while deleting product",
-                    }),
-                );
+            await deleteProductController(req, res);
+        });
+        test("returns 500 status code", () => {
+            expect(statusCode).toBe(500);
+        });
+
+        test("sends error response", () => {
+            expect(sentBody).toEqual(
+                expect.objectContaining({
+                    success: false,
+                    message: "Error while deleting product",
+                }),
+            );
+        });
+    });
+});
+
+describe("updateProductController", () => {
+    describe("when product not found", () => {
+        let res;
+        beforeEach(async () => {
+            res = makeRes();
+            productModel.findById.mockResolvedValue(null);
+            await updateProductController({params: {pid: "p1"}, fields: {}, files: {}}, res);
+        });
+        test("return status 404", async () => {
+            expect(res.status).toHaveBeenCalledWith(404);
+        });
+        test("error response sent", async () => {
+            expect(res.send).toHaveBeenCalledWith({error: "Product not found"});
+        });
+    });
+    describe("when updating invalid product", () => {
+        let res;
+        beforeEach(async () => {
+            res = makeRes();
+            const productDoc = {set: jest.fn(), save: jest.fn(), photo: {}};
+            productModel.findById.mockResolvedValue(productDoc);
+
+            await updateProductController({params: {pid: "p1"}, fields: {}, files: {}}, res);
+        });
+        test("return status 400", async () => {
+            expect(res.status).toHaveBeenCalledWith(400);
+        });
+        test("error response", async () => {
+            expect(res.send).toHaveBeenCalledWith({error: "Name is Required"});
+        });
+    });
+    describe("upon successful product update", () => {
+        let res, req, productDoc;
+        beforeEach(async () => {
+            res = makeRes();
+            productDoc = {set: jest.fn(), save: jest.fn(), photo: {}};
+            productModel.findById.mockResolvedValue(productDoc);
+
+            req = {
+                params: {pid: "p1"},
+                fields: {
+                    name: "mockName",
+                    description: "mockDesc",
+                    price: 1,
+                    category: "mockCategory",
+                    quantity: 1,
+                    shipping: true
+                },
+                files: { photo: { path: "/tmp/p", type: "image/png", size: 100 } },
+            };
+
+            await updateProductController(req, res);
+        });
+        test("return 200 status code", async () => {
+            expect(res.status).toHaveBeenCalledWith(200);
+        });
+        test("success response sent with object containing updated product", async () => {
+            expect(res.send).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    success: true,
+                    message: "Product Updated Successfully",
+                    products: productDoc,
+                })
+            );
+        });
+    });
+    describe("when unexpected error happens", () => {
+        let statusCode, sentBody;
+        beforeAll(async () => {
+            const res = {};
+            res.status = jest.fn((code) => {
+                statusCode = code;
+                return res;
             });
+            res.send = jest.fn((body) => {
+                sentBody = body;
+                return res;
+            });
+            productModel.findById.mockRejectedValue(new Error("update fail"));
+
+            await updateProductController(
+                {params: {pid: "p1"}, fields: {}, files: {}},
+                res
+            );
+        });
+        test("returns 500 status code", () => {
+            expect(statusCode).toBe(500);
+        });
+        test("sends error response", () => {
+            expect(sentBody).toEqual(
+                expect.objectContaining({
+                    success: false,
+                    message: "Error in updating product",
+                })
+            );
         });
     });
 });
@@ -889,6 +839,19 @@ describe("productCountController", () => {
 });
 
 describe("productListController", () => {
+    describe("when page param is missing", () => {
+        test("defaults page to 1", async () => {
+            const res = makeRes();
+            const products = [{}, {}];
+            const chain = makeThenableQuery(products);
+
+            productModel.find.mockReturnValue(chain);
+
+            await productListController({ params: {} }, res);
+
+            expect(chain.skip).toHaveBeenCalledWith(0);
+        });
+    });
     describe("paginates results based on page param", () => {
         let res, chain;
         const products = [{}, {}, {}];

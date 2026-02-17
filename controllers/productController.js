@@ -15,15 +15,15 @@ export function validateProductFields(fields, files) {
   if (!category) return { status: 400, error: "Category is Required" };
   if (!quantity) return { status: 400, error: "Quantity is Required" };
   if (shipping === undefined) return { status: 400, error: "Shipping is Required" };
-  if (photo && photo.size > 1_000_000)
+  if (!photo) return { status: 400, error: "Photo is Required" };
+  if (photo.size > 1_000_000)
     return { status: 400, error: "Photo should be less then 1mb" };
 
   return null;
 }
 
 //helper to attach photo
-export function attachPhotoIfPresent(productDoc, photo, readFile) {
-  if (!photo) return;
+export function attachPhoto(productDoc, photo, readFile) {
   productDoc.photo.data = readFile(photo.path);
   productDoc.photo.contentType = photo.type;
 }
@@ -39,7 +39,7 @@ export async function saveProductService({
   if (validation) return { ok: false, ...validation };
 
   productDoc.set({ ...fields, slug: slugify(fields.name) });
-  attachPhotoIfPresent(productDoc, files?.photo, readFile);
+  attachPhoto(productDoc, files?.photo, readFile);
   await productDoc.save();
 
   return { ok: true, status: 200, product: productDoc };
@@ -134,10 +134,8 @@ export const productPhotoController = async (req, res) => {
         message: "Product Photo not found",
       });
     }
-    if (product.photo.data) {
-      res.set("Content-type", product.photo.contentType);
-      return res.status(200).send(product.photo.data);
-    }
+    res.set("Content-type", product.photo.contentType);
+    return res.status(200).send(product.photo.data);
   } catch (error) {
     console.log(error.message);
     res.status(500).send({
