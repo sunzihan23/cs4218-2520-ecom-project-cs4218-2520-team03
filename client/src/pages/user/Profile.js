@@ -34,7 +34,9 @@ const Profile = () => {
         phone,
         address,
       });
-      if (data?.error) {
+      // Sun Zihan, A0259581R
+      // correct typo
+      if (data?.error) { 
         toast.error(data?.error);
       } else {
         setAuth({ ...auth, user: data?.updatedUser });
@@ -75,6 +77,7 @@ const Profile = () => {
                   <input
                     type="email"
                     value={email}
+                    // Sun Zihan, A0259581R
                     // remove onChange as function to change email is disabled
                     // onChange={(e) => setEmail(e.target.value)}
                     className="form-control"
