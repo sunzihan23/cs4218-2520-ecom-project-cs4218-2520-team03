@@ -2,20 +2,22 @@ import categoryModel from "../models/categoryModel.js";
 import slugify from "slugify";
 export const createCategoryController = async (req, res) => {
   try {
-    const { name } = req.body;
+    const name = req.body?.name?.trim();
     if (!name) {
-      return res.status(401).send({ message: "Name is required" });
+      return res
+        .status(400)
+        .send({ success: false, message: "Name is required" });
     }
     const existingCategory = await categoryModel.findOne({ name });
     if (existingCategory) {
-      return res.status(200).send({
-        success: true,
+      return res.status(409).send({
+        success: false,
         message: "Category Already Exisits",
       });
     }
     const category = await new categoryModel({
       name,
-      slug: slugify(name),
+      slug: slugify(name, { lower: true, strict: true }),
     }).save();
     res.status(201).send({
       success: true,
@@ -26,8 +28,8 @@ export const createCategoryController = async (req, res) => {
     console.log(error);
     res.status(500).send({
       success: false,
-      errro,
-      message: "Errro in Category",
+      error,
+      message: "Error in Category",
     });
   }
 };
@@ -35,8 +37,13 @@ export const createCategoryController = async (req, res) => {
 //update category
 export const updateCategoryController = async (req, res) => {
   try {
-    const { name } = req.body;
+    const name = req.body?.name?.trim();
     const { id } = req.params;
+    if (!name) {
+      return res
+        .status(400)
+        .send({ success: false, message: "Name is required" });
+    }
     const category = await categoryModel.findByIdAndUpdate(
       id,
       { name, slug: slugify(name) },
@@ -44,7 +51,7 @@ export const updateCategoryController = async (req, res) => {
     );
     res.status(200).send({
       success: true,
-      messsage: "Category Updated Successfully",
+      message: "Category Updated Successfully",
       category,
     });
   } catch (error) {
@@ -58,7 +65,7 @@ export const updateCategoryController = async (req, res) => {
 };
 
 // get all cat
-export const categoryControlller = async (req, res) => {
+export const categoryController = async (req, res) => {
   try {
     const category = await categoryModel.find({});
     res.status(200).send({
