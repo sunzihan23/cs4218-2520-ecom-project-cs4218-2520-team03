@@ -37,9 +37,9 @@ import {
           await registerController(req, res);
           
           if (field === "name") {
-            expect(res.send).toHaveBeenCalledWith(expect.objectContaining({ message: expect.stringContaining("Name is Required") }));
+            expect(res.send).toHaveBeenCalledWith(expect.objectContaining({ message: expect.stringContaining("Name is required") }));
           } else {
-            expect(res.send).toHaveBeenCalledWith(expect.objectContaining({ message: expect.stringContaining("Required") }));
+            expect(res.send).toHaveBeenCalledWith(expect.objectContaining({ message: expect.stringContaining("Email is required") }));
           }
         }
       });
@@ -88,7 +88,7 @@ import {
         await registerController(req, res);
   
         expect(res.status).toHaveBeenCalledWith(500);
-        expect(res.send).toHaveBeenCalledWith(expect.objectContaining({ message: "Error in Registration" }));
+        expect(res.send).toHaveBeenCalledWith(expect.objectContaining({ message: "Failed to register user" }));
       });
     });
   
@@ -121,7 +121,7 @@ import {
         await loginController(req, res);
   
         expect(res.status).toHaveBeenCalledWith(401); 
-        expect(res.send).toHaveBeenCalledWith(expect.objectContaining({ message: "Invalid Password" }));
+        expect(res.send).toHaveBeenCalledWith(expect.objectContaining({ message: "Invalid password" }));
       });
   
       it("should login successfully and return JWT", async () => {
@@ -146,7 +146,18 @@ import {
         await forgotPasswordController(req, res);
   
         expect(res.status).toHaveBeenCalledWith(404);
-        expect(res.send).toHaveBeenCalledWith(expect.objectContaining({ message: "Wrong Email Or Answer" }));
+        expect(res.send).toHaveBeenCalledWith(expect.objectContaining({ message: "Wrong email or answer" }));
+      });
+
+      it("should return 400 if email, answer, or newPassword is missing", async () => {
+        const fields = ["email", "answer", "newPassword"];
+        for (const field of fields) {
+          req.body = { email: "e", answer: "a", newPassword: "p" };
+          delete req.body[field];
+          await forgotPasswordController(req, res);
+          expect(res.status).toHaveBeenCalledWith(400);
+          expect(res.send).toHaveBeenCalledWith(expect.objectContaining({ success: false }));
+        }
       });
   
       it("should reset password successfully with valid credentials", async () => {
