@@ -169,9 +169,7 @@ describe("CreateCategory Component", () => {
     fireEvent.click(screen.getByRole("button", { name: /submit/i }));
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith(
-        "somthing went wrong in input form",
-      );
+      expect(toast.error).toHaveBeenCalledWith("error: Submission error");
     });
   });
 

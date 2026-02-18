@@ -9,6 +9,7 @@ export default {
   testMatch: [
     "<rootDir>/controllers/*.test.js",
     "<rootDir>/helpers/authHelper.test.js"
+    "<rootDir>/models/*.test.js",
   ],
 
   // jest code coverage
@@ -16,11 +17,13 @@ export default {
   collectCoverageFrom: [
     "controllers/productController.js",
     "helpers/authHelper.js"
+    "controllers/categoryController.js",
+    "models/productModel.js"
   ],
   coverageThreshold: {
     global: {
-      lines: 50,
-      functions: 50,
+      lines: 100,
+      functions: 100,
     },
   },
 };
