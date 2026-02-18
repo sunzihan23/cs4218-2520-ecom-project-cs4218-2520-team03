@@ -39,6 +39,18 @@ const CreateProduct = () => {
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
+      if (!name || !description || !price || !category || !quantity) {
+        toast.error("Please fill all required fields");
+        return;
+      }
+      if (price <= 0) {
+        toast.error("Price must be greater than 0");
+        return;
+      }
+      if (quantity < 0) {
+        toast.error("Quantity must be greater than or equal to 0");
+        return;
+      }
       const productData = new FormData();
       productData.append("name", name);
       productData.append("description", description);
@@ -47,7 +59,7 @@ const CreateProduct = () => {
       productData.append("photo", photo);
       productData.append("category", category);
       productData.append("shipping", shipping);
-      const { data } = axios.post(
+      const { data } = await axios.post(
         "/api/v1/product/create-product",
         productData,
       );
@@ -120,6 +132,7 @@ const CreateProduct = () => {
                   placeholder="write a name"
                   className="form-control"
                   onChange={(e) => setName(e.target.value)}
+                  required
                 />
               </div>
               <div className="mb-3">
@@ -129,6 +142,7 @@ const CreateProduct = () => {
                   placeholder="write a description"
                   className="form-control"
                   onChange={(e) => setDescription(e.target.value)}
+                  required
                 />
               </div>
 
@@ -139,6 +153,7 @@ const CreateProduct = () => {
                   placeholder="write a Price"
                   className="form-control"
                   onChange={(e) => setPrice(e.target.value)}
+                  required
                 />
               </div>
               <div className="mb-3">

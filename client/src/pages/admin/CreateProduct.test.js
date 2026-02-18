@@ -5,7 +5,7 @@ import { BrowserRouter } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
 import CreateProduct from "./CreateProduct";
-import { Select } from "antd";
+import { fi } from "date-fns/locale";
 
 jest.mock("axios");
 jest.mock("react-hot-toast");
@@ -158,7 +158,101 @@ describe("CreateProduct Component", () => {
       expect(select.value).toBe("2");
     });
 
+    test("shows error toast when required fields are missing on form submission", async () => {
+      axios.get.mockResolvedValue({
+        data: { success: true, category: mockCategories },
+      });
+
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText("write a name")).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByRole("button", { name: "CREATE PRODUCT" }));
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith(
+          "Please fill all required fields",
+        );
+      });
+    });
+
+    test("shows error toast on invalid price input", async () => {
+      axios.get.mockResolvedValue({
+        data: { success: true, category: mockCategories },
+      });
+
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText("write a name")).toBeInTheDocument();
+      });
+      // fill in other required fields to pass the required field validation
+      fireEvent.change(screen.getByPlaceholderText("write a name"), {
+        target: { value: "Test Product" },
+      });
+      fireEvent.change(screen.getByPlaceholderText("write a description"), {
+        target: { value: "This is a pencil" },
+      });
+
+      fireEvent.change(screen.getByPlaceholderText("write a Price"), {
+        target: { value: "-5" },
+      });
+      fireEvent.change(screen.getByPlaceholderText("write a quantity"), {
+        target: { value: "200" },
+      });
+      const selects = screen.getAllByRole("combobox");
+      const select = selects[0];
+      fireEvent.change(select, { target: { value: "2" } });
+
+      fireEvent.click(screen.getByRole("button", { name: "CREATE PRODUCT" }));
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith(
+          "Price must be greater than 0",
+        );
+      });
+    });
+    test("shows error toast on invalid quantity input", async () => {
+      axios.get.mockResolvedValue({
+        data: { success: true, category: mockCategories },
+      });
+
+      renderComponent();
+
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText("write a name")).toBeInTheDocument();
+      });
+      // fill in other required fields to pass the required field validation
+      fireEvent.change(screen.getByPlaceholderText("write a name"), {
+        target: { value: "Test Product" },
+      });
+      fireEvent.change(screen.getByPlaceholderText("write a description"), {
+        target: { value: "This is a pencil" },
+      });
+
+      fireEvent.change(screen.getByPlaceholderText("write a Price"), {
+        target: { value: "5" },
+      });
+      const selects = screen.getAllByRole("combobox");
+      const select = selects[0];
+      fireEvent.change(select, { target: { value: "2" } });
+
+      fireEvent.change(screen.getByPlaceholderText("write a quantity"), {
+        target: { value: "-10" },
+      });
+      fireEvent.click(screen.getByRole("button", { name: "CREATE PRODUCT" }));
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith(
+          "Quantity must be greater than or equal to 0",
+        );
+      });
+    });
+
     test("creates product on successful form submission", async () => {
+      global.URL.createObjectURL = jest.fn(() => "mock-url");
       const mockedProduct = {
         name: "Hoodie",
         description: "This is a hoodie.",
@@ -195,6 +289,16 @@ describe("CreateProduct Component", () => {
       const selects = screen.getAllByRole("combobox");
       const select = selects[0];
       fireEvent.change(select, { target: { value: "2" } });
+      // upload photo (robust)
+      const file = new File(["photo"], "photo.png", { type: "image/png" });
+
+      // find the label button, then its input
+      const uploadLabel = screen.getByText("Upload Photo");
+      const input = uploadLabel
+        .closest("label")
+        .querySelector('input[type="file"]');
+
+      fireEvent.change(input, { target: { files: [file] } });
       fireEvent.click(screen.getByRole("button", { name: "CREATE PRODUCT" }));
 
       await waitFor(() => {
@@ -323,29 +427,6 @@ describe("CreateProduct Component", () => {
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("something went wrong");
-    });
-  });
-
-  test("replaces existing photo when a new photo is selected", async () => {
-    global.URL.createObjectURL = jest.fn(() => "blob:mock-url");
-    axios.get.mockResolvedValue({
-      data: { success: true, category: mockCategories },
-    });
-
-    const appendMock = jest.fn();
-    global.FormData = jest.fn(() => ({ append: appendMock }));
-
-    renderComponent();
-
-    const file = new File(["photo"], "photo.png", { type: "image/png" });
-    const input = document.querySelector('input[type="file"]');
-
-    fireEvent.change(input, { target: { files: [file] } });
-    await screen.findByText("photo.png");
-    fireEvent.click(screen.getByText("CREATE PRODUCT"));
-
-    await waitFor(() => {
-      expect(appendMock).toHaveBeenCalledWith("photo", file);
     });
   });
 

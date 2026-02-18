@@ -5,4 +5,6 @@ export default {
     "<rootDir>/jest.backend.config.js",
     "<rootDir>/jest.frontend.config.js",
   ],
+  testEnvironment: "node",
+  setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
 };

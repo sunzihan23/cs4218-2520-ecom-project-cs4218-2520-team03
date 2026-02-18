@@ -63,6 +63,18 @@ const UpdateProduct = () => {
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
+      if (!name || !description || !price || !category || !quantity) {
+        toast.error("Please fill all required fields");
+        return;
+      }
+      if (price <= 0) {
+        toast.error("Price must be greater than 0");
+        return;
+      }
+      if (quantity < 0) {
+        toast.error("Quantity must be greater than or equal to 0");
+        return;
+      }
       const productData = new FormData();
       productData.append("name", name);
       productData.append("description", description);
@@ -71,15 +83,13 @@ const UpdateProduct = () => {
       photo && productData.append("photo", photo);
       productData.append("category", category);
       productData.append("shipping", shipping);
-      const { data } = axios.put(
+      const { data } = await axios.put(
         `/api/v1/product/update-product/${id}`,
         productData,
       );
       if (data?.success) {
         toast.success("Product Updated Successfully");
         navigate("/dashboard/admin/products");
-      } else {
-        toast.error("Update product failed");
       }
     } catch (error) {
       console.log(error);
