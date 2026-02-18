@@ -18,6 +18,7 @@ export default {
   collectCoverageFrom: [
     "controllers/productController.js",
     "controllers/categoryController.js",
+    "controllers/authController.js",
     "helpers/authHelper.js",
     "middlewares/authMiddleware.js",
     "models/productModel.js"

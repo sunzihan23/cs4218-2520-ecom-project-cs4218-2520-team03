@@ -9,7 +9,9 @@ export const registerController = async (req, res) => {
     const { name, email, password, phone, address, answer } = req.body;
     //validations
     if (!name) {
-      return res.send({ error: "Name is Required" });
+      // Sun Zihan, A0259581R
+      // changed type from error to message 
+      return res.send({ message: "Name is Required" }); 
     }
     if (!email) {
       return res.send({ message: "Email is Required" });
@@ -32,7 +34,7 @@ export const registerController = async (req, res) => {
     if (exisitingUser) {
       return res.status(200).send({
         success: false,
-        message: "Already Register please login",
+        message: "Already registered, please login",
       });
     }
     //register user
@@ -49,14 +51,16 @@ export const registerController = async (req, res) => {
 
     res.status(201).send({
       success: true,
-      message: "User Register Successfully",
+      message: "User registered successfully",
       user,
     });
   } catch (error) {
     console.log(error);
     res.status(500).send({
       success: false,
-      message: "Errro in Registeration",
+      // Sun Zihan, A0259581R
+      // fix typo 
+      message: "Error in Registration",
       error,
     });
   }
@@ -83,7 +87,9 @@ export const loginController = async (req, res) => {
     }
     const match = await comparePassword(password, user.password);
     if (!match) {
-      return res.status(200).send({
+      // Sun Zihan, A0259581R
+      // corrected status code to 401 unauthorised 
+      return res.status(401).send({
         success: false,
         message: "Invalid Password",
       });
@@ -94,7 +100,7 @@ export const loginController = async (req, res) => {
     });
     res.status(200).send({
       success: true,
-      message: "login successfully",
+      message: "Login successfully",
       user: {
         _id: user._id,
         name: user.name,
@@ -121,10 +127,10 @@ export const forgotPasswordController = async (req, res) => {
   try {
     const { email, answer, newPassword } = req.body;
     if (!email) {
-      res.status(400).send({ message: "Emai is required" });
+      res.status(400).send({ message: "Email is required" });
     }
     if (!answer) {
-      res.status(400).send({ message: "answer is required" });
+      res.status(400).send({ message: "Answer is required" });
     }
     if (!newPassword) {
       res.status(400).send({ message: "New Password is required" });
@@ -171,7 +177,7 @@ export const updateProfileController = async (req, res) => {
     const user = await userModel.findById(req.user._id);
     //password
     if (password && password.length < 6) {
-      return res.json({ error: "Passsword is required and 6 character long" });
+      return res.json({ error: "Passsword is required and should be 6 characters long" });
     }
     const hashedPassword = password ? await hashPassword(password) : undefined;
     const updatedUser = await userModel.findByIdAndUpdate(
@@ -186,14 +192,14 @@ export const updateProfileController = async (req, res) => {
     );
     res.status(200).send({
       success: true,
-      message: "Profile Updated SUccessfully",
+      message: "Profile Updated Successfully",
       updatedUser,
     });
   } catch (error) {
     console.log(error);
     res.status(400).send({
       success: false,
-      message: "Error WHile Update profile",
+      message: "Error While Updating Profile",
       error,
     });
   }
@@ -211,7 +217,7 @@ export const getOrdersController = async (req, res) => {
     console.log(error);
     res.status(500).send({
       success: false,
-      message: "Error WHile Geting Orders",
+      message: "Error While Getting Orders",
       error,
     });
   }
@@ -229,7 +235,7 @@ export const getAllOrdersController = async (req, res) => {
     console.log(error);
     res.status(500).send({
       success: false,
-      message: "Error WHile Geting Orders",
+      message: "Error While Getting Orders",
       error,
     });
   }
@@ -250,7 +256,7 @@ export const orderStatusController = async (req, res) => {
     console.log(error);
     res.status(500).send({
       success: false,
-      message: "Error While Updateing Order",
+      message: "Error While Updating Orders",
       error,
     });
   }
