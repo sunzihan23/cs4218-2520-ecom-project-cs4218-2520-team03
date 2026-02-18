@@ -1,0 +1,75 @@
+// Sun Zihan, A0259581R
+import bcrypt from "bcrypt";
+import { hashPassword, comparePassword } from "./authHelper";
+
+jest.mock("bcrypt");
+
+describe("authHelper Security Utilities", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe("hashPassword", () => {
+    it("should successfully transform plaintext into a bcrypt hash", async () => {
+      const password = "password123";
+      const mockHash = "hashed_password_abc";
+      bcrypt.hash.mockResolvedValue(mockHash);
+
+      const result = await hashPassword(password);
+
+      expect(bcrypt.hash).toHaveBeenCalledWith(password, 10);
+      expect(result).toBe(mockHash);
+    });
+
+    it("should return null if password is not provided", async () => {
+      const result = await hashPassword("");
+      expect(result).toBeNull();
+      expect(bcrypt.hash).not.toHaveBeenCalled();
+    });
+
+    it("should catch and log hashing errors", async () => {
+      const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+      const mockError = new Error("Bcrypt Error");
+      bcrypt.hash.mockRejectedValue(mockError);
+
+      const result = await hashPassword("password123");
+
+      expect(consoleSpy).toHaveBeenCalledWith("Error hashing password:", mockError);
+      expect(result).toBeNull(); 
+      
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe("comparePassword", () => {
+    it("should return true when plaintext matches the hash", async () => {
+      bcrypt.compare.mockResolvedValue(true);
+      const result = await comparePassword("password123", "correct_hash");
+      expect(result).toBe(true);
+    });
+
+    it("should return false if inputs are missing", async () => {
+      const result = await comparePassword("", "some_hash");
+      expect(result).toBe(false);
+    });
+
+    it("should return false when plaintext does not match the hash", async () => {
+      bcrypt.compare.mockResolvedValue(false);
+      const result = await comparePassword("wrong_password", "correct_hash");
+      expect(result).toBe(false);
+    });
+
+    it("should handle bcrypt.compare internal failures by returning false", async () => {
+      const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+      const mockError = new Error("Internal Bcrypt Failure");
+      bcrypt.compare.mockRejectedValue(mockError);
+  
+      const result = await comparePassword("any_password", "any_hash");
+  
+      expect(result).toBe(false);
+      expect(consoleSpy).toHaveBeenCalledWith("Error comparing passwords:", mockError);
+      
+      consoleSpy.mockRestore();
+    });
+  });
+});
