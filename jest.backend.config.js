@@ -9,6 +9,7 @@ export default {
   testMatch: [
     "<rootDir>/controllers/*.test.js",
     "<rootDir>/helpers/authHelper.test.js",
+    "<rootDir>/middlewares/authMiddleware.test.js",
     "<rootDir>/models/*.test.js",
   ],
 
@@ -16,8 +17,9 @@ export default {
   collectCoverage: true,
   collectCoverageFrom: [
     "controllers/productController.js",
-    "helpers/authHelper.js",
     "controllers/categoryController.js",
+    "helpers/authHelper.js",
+    "middlewares/authMiddleware.js",
     "models/productModel.js"
   ],
   coverageThreshold: {
