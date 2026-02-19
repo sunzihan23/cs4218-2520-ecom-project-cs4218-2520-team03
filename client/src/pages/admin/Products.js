@@ -7,14 +7,14 @@ import { Link } from "react-router-dom";
 const Products = () => {
   const [products, setProducts] = useState([]);
 
-  //getall products
+  //get all products
   const getAllProducts = async () => {
     try {
       const { data } = await axios.get("/api/v1/product/get-product");
       setProducts(data.products);
     } catch (error) {
-      console.log(error);
-      toast.error("Someething Went Wrong");
+      console.log(error.message);
+      toast.error("Something Went Wrong");
     }
   };
 
@@ -40,7 +40,7 @@ const Products = () => {
                 <div className="card m-2" style={{ width: "18rem" }}>
                   <img
                     src={`/api/v1/product/product-photo/${p._id}`}
-                    className="card-img-top"
+                    className="card-img-top" 
                     alt={p.name}
                   />
                   <div className="card-body">

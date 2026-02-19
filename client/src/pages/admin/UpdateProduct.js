@@ -16,7 +16,7 @@ const UpdateProduct = () => {
   const [price, setPrice] = useState("");
   const [category, setCategory] = useState("");
   const [quantity, setQuantity] = useState("");
-  const [shipping, setShipping] = useState("");
+  const [shipping, setShipping] = useState(false);
   const [photo, setPhoto] = useState("");
   const [id, setId] = useState("");
 
@@ -24,7 +24,7 @@ const UpdateProduct = () => {
   const getSingleProduct = async () => {
     try {
       const { data } = await axios.get(
-        `/api/v1/product/get-product/${params.slug}`
+        `/api/v1/product/get-product/${params.slug}`,
       );
       setName(data.product.name);
       setId(data.product._id);
@@ -63,6 +63,18 @@ const UpdateProduct = () => {
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
+      if (!name || !description || !price || !category || !quantity) {
+        toast.error("Please fill all required fields");
+        return;
+      }
+      if (price <= 0) {
+        toast.error("Price must be greater than 0");
+        return;
+      }
+      if (quantity < 0) {
+        toast.error("Quantity must be greater than or equal to 0");
+        return;
+      }
       const productData = new FormData();
       productData.append("name", name);
       productData.append("description", description);
@@ -70,13 +82,12 @@ const UpdateProduct = () => {
       productData.append("quantity", quantity);
       photo && productData.append("photo", photo);
       productData.append("category", category);
-      const { data } = axios.put(
+      productData.append("shipping", shipping);
+      const { data } = await axios.put(
         `/api/v1/product/update-product/${id}`,
-        productData
+        productData,
       );
       if (data?.success) {
-        toast.error(data?.message);
-      } else {
         toast.success("Product Updated Successfully");
         navigate("/dashboard/admin/products");
       }
@@ -89,12 +100,23 @@ const UpdateProduct = () => {
   //delete a product
   const handleDelete = async () => {
     try {
-      let answer = window.prompt("Are You Sure want to delete this product ? ");
-      if (!answer) return;
-      const { data } = await axios.delete(
-        `/api/v1/product/delete-product/${id}`
+      // Prompt user with Yes/No options only
+      let answer = window.prompt(
+        "Are you sure you want to delete this product? Type 'Yes' to confirm or 'No' to cancel.",
       );
-      toast.success("Product DEleted Succfully");
+
+      // Check if the answer is neither 'Yes' nor 'No'
+      if (answer !== "Yes") {
+        toast.error("Product deletion canceled.");
+        return;
+      }
+
+      // Proceed with deletion if answer is 'Yes'
+      const { data } = await axios.delete(
+        `/api/v1/product/delete-product/${id}`,
+      );
+
+      toast.success("Product Deleted Successfully");
       navigate("/dashboard/admin/products");
     } catch (error) {
       console.log(error);
@@ -112,7 +134,7 @@ const UpdateProduct = () => {
             <h1>Update Product</h1>
             <div className="m-1 w-75">
               <Select
-                bordered={false}
+                variant={false}
                 placeholder="Select a category"
                 size="large"
                 showSearch
@@ -200,7 +222,7 @@ const UpdateProduct = () => {
               </div>
               <div className="mb-3">
                 <Select
-                  bordered={false}
+                  variant={false}
                   placeholder="Select Shipping "
                   size="large"
                   showSearch
@@ -208,10 +230,10 @@ const UpdateProduct = () => {
                   onChange={(value) => {
                     setShipping(value);
                   }}
-                  value={shipping ? "yes" : "No"}
+                  value={shipping}
                 >
-                  <Option value="0">No</Option>
-                  <Option value="1">Yes</Option>
+                  <Option value={false}>No</Option>
+                  <Option value={true}>Yes</Option>
                 </Select>
               </div>
               <div className="mb-3">
