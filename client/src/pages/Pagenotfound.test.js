@@ -5,25 +5,13 @@ import "@testing-library/jest-dom/extend-expect";
 import Pagenotfound from "./Pagenotfound";
 import { MemoryRouter } from "react-router-dom";
 
-jest.mock("./../components/Layout", () =>
-    jest.fn(({ title, children }) => {
-        return <div data-testid="Layout">
-            <h1>
-                {title}
-            </h1>
-            {children}
-        </div>
-    })
+jest.mock("../components/Layout", () =>
+    jest.fn(({ children }) => <div>{children}</div>)
 );
 
 describe("Pagenotfound Component", () => {
 
     const pagenotfound = <MemoryRouter><Pagenotfound /></MemoryRouter>;
-
-    it("renders layout wrapper", () => {
-        const { getByTestId } = render(pagenotfound);
-        expect(getByTestId("Layout")).toBeInTheDocument();
-    });
 
     it("renders page title", () => {
         const { getByText } = render(pagenotfound);

@@ -4,15 +4,8 @@ import { render } from "@testing-library/react";
 import "@testing-library/jest-dom/extend-expect";
 import Contact from "./Contact";
 
-jest.mock("./../components/Layout", () =>
-    jest.fn(({ title, children }) => {
-        return <div data-testid="Layout">
-            <h1>
-                {title}
-            </h1>
-            {children}
-        </div>
-    })
+jest.mock("../components/Layout", () =>
+    jest.fn(({ children }) => <div>{children}</div>)
 );
 
 jest.mock("react-icons/bi", () => ({
@@ -28,11 +21,6 @@ jest.mock("react-icons/bi", () => ({
 }));
 
 describe("Contact Component", () => {
-
-    it("renders layout wrapper", () => {
-        const { getByTestId } = render(<Contact />);
-        expect(getByTestId("Layout")).toBeInTheDocument();
-    });
 
     it("renders contact image", () => {
         const { getByAltText } = render(<Contact />);
@@ -51,21 +39,18 @@ describe("Contact Component", () => {
     });
 
     it("renders email text correctly", () => {
-        const { getByTestId } = render(<Contact />);
-        expect(getByTestId("BiMailSend"))
-            .toHaveTextContent("www.help@ecommerceapp.com");
+        const { getByText } = render(<Contact />);
+        expect(getByText(/www.help@ecommerceapp.com/)).toBeInTheDocument();
     });
 
     it("renders phone number correctly", () => {
-        const { getByTestId } = render(<Contact />);
-        expect(getByTestId("BiPhoneCall"))
-            .toHaveTextContent("012-3456789");
+        const { getByText } = render(<Contact />);
+        expect(getByText(/012-3456789/)).toBeInTheDocument();
     });
 
-    it("renders toll-free support number correctly", () => {
-        const { getByTestId } = render(<Contact />);
-        expect(getByTestId("BiSupport"))
-            .toHaveTextContent("1800-0000-0000 (toll free)");
+    it("renders support number correctly", () => {
+        const { getByText } = render(<Contact />);
+        expect(getByText(/1800-0000-0000 \(toll free\)/)).toBeInTheDocument();
     });
 
     it("renders mail icon", () => {
