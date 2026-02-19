@@ -26,7 +26,8 @@ export default {
     "<rootDir>/client/src/pages/Contact.test.js",
     "<rootDir>/client/src/pages/Policy.test.js",
     "<rootDir>/client/src/pages/Pagenotfound.test.js",
-    "<rootDir>/client/src/pages/About.test.js",],
+    "<rootDir>/client/src/pages/About.test.js",
+    "<rootDir>/client/src/pages/user/Dashboard.test.js",],
 
   // "<rootDir>/client/src/pages/Auth/*.test.js", 
 
@@ -38,7 +39,8 @@ export default {
     "<rootDir>/client/src/pages/Contact.test.js",
     "<rootDir>/client/src/pages/Policy.test.js",
     "<rootDir>/client/src/pages/Pagenotfound.test.js",
-    "<rootDir>/client/src/pages/About.test.js",],
+    "<rootDir>/client/src/pages/About.test.js",
+    "<rootDir>/client/src/pages/user/Dashboard.test.js",],
   coverageThreshold: {
     global: {
       lines: 100,
