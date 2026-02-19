@@ -4,7 +4,7 @@ import { render } from "@testing-library/react";
 import "@testing-library/jest-dom/extend-expect";
 import About from "./About";
 
-jest.mock("../components/Layout", () =>
+jest.mock("./../components/Layout", () =>
     jest.fn(({ title, children }) => {
         return <div data-testid="Layout">
             <h1>

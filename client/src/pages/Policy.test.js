@@ -1,11 +1,10 @@
 // Chen Peiran, A0257826R
 import React from "react";
-import { render, fireEvent } from "@testing-library/react";
-import { MemoryRouter } from 'react-router-dom';
+import { render } from "@testing-library/react";
 import "@testing-library/jest-dom/extend-expect";
 import Policy from "./Policy";
 
-jest.mock("../components/Layout", () =>
+jest.mock("./../components/Layout", () =>
     jest.fn(({ title, children }) => {
         return <div data-testid="Layout">
             <h1>
