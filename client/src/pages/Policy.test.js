@@ -4,8 +4,8 @@ import { render } from "@testing-library/react";
 import "@testing-library/jest-dom/extend-expect";
 import Policy from "./Policy";
 
-jest.mock("../components/Layout", () =>
-    jest.fn(({ children }) => <div>{children}</div>)
+jest.mock("./../components/Layout", () =>
+    ({ children }) => <div>{children}</div>
 );
 
 describe("Policy Component", () => {

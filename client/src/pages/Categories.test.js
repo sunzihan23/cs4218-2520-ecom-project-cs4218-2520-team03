@@ -7,7 +7,7 @@ import Categories from "./Categories";
 import useCategory from "../hooks/useCategory";
 
 jest.mock("../components/Layout", () =>
-    jest.fn(({ children }) => <div>{children}</div>)
+    ({ children }) => <div>{children}</div>
 );
 
 jest.mock("../hooks/useCategory", () => jest.fn());

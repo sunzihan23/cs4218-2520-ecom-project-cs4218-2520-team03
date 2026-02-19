@@ -6,11 +6,11 @@ import Dashboard from "./Dashboard";
 import { useAuth } from "../../context/auth";
 
 jest.mock("../../components/Layout", () =>
-    jest.fn(({ children }) => <div>{children}</div>)
+    ({ children }) => <div>{children}</div>
 );
 
 jest.mock("../../components/UserMenu", () =>
-    jest.fn(() => <div>UserMenu</div>)
+    () => <div>UserMenu</div>
 );
 
 jest.mock("../../context/auth", () => ({

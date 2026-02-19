@@ -5,8 +5,8 @@ import "@testing-library/jest-dom/extend-expect";
 import Pagenotfound from "./Pagenotfound";
 import { MemoryRouter } from "react-router-dom";
 
-jest.mock("../components/Layout", () =>
-    jest.fn(({ children }) => <div>{children}</div>)
+jest.mock("./../components/Layout", () =>
+    ({ children }) => <div>{children}</div>
 );
 
 describe("Pagenotfound Component", () => {
