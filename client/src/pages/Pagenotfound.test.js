@@ -1,3 +1,4 @@
+// Chen Peiran, A0257826R
 import React from "react";
 import { render } from "@testing-library/react";
 import "@testing-library/jest-dom/extend-expect";
@@ -39,6 +40,6 @@ describe("Pagenotfound Component", () => {
         const link = getByRole("link", { name: "Go Back" });
         expect(link).toBeInTheDocument();
         expect(link).toHaveAttribute("href", "/");
-    })
+    });
 
 });
