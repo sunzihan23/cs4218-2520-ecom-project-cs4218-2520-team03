@@ -21,6 +21,7 @@ export default {
 
   // only run these tests
   testMatch: ["<rootDir>/client/src/components/UserMenu.test.js",
+    "<rootDir>/client/src/components/Header.test.js",
     // "<rootDir>/client/src/components/Footer.test.js",
     // "<rootDir>/client/src/components/Spinner.test.js",
     // "<rootDir>/client/src/components/Layout.test.js",
@@ -39,6 +40,7 @@ export default {
   // jest code coverage
   collectCoverage: true,
   collectCoverageFrom: ["client/src/components/UserMenu.test.js",
+    "<rootDir>/client/src/components/Header.test.js",
     // "<rootDir>/client/src/components/Footer.test.js",
     // "<rootDir>/client/src/components/Spinner.test.js",
     // "<rootDir>/client/src/components/Layout.test.js",
