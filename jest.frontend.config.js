@@ -32,20 +32,20 @@ export default {
   // jest code coverage
   collectCoverage: true,
   collectCoverageFrom: [
-    // "client/src/pages/Auth/**",
-    // "client/src/components/Form/CategoryForm.js",
-    // "client/src/pages/admin/CreateCategory.js",
-    // "client/src/pages/admin/CreateProduct.js",
-    // "client/src/pages/admin/UpdateProduct.js",
-    // "client/src/pages/admin/AdminDashboard.js",
-    // "client/src/pages/admin/Users.js",
+    "client/src/pages/Auth/**",
+    "client/src/components/Form/CategoryForm.js",
+    "client/src/pages/admin/CreateCategory.js",
+    "client/src/pages/admin/CreateProduct.js",
+    "client/src/pages/admin/UpdateProduct.js",
+    "client/src/pages/admin/AdminDashboard.js",
+    "client/src/pages/admin/Users.js",
     "client/src/pages/admin/Products.js",
-    // "client/src/pages/user/Profile.js",
-    // "client/src/components/AdminMenu.js",
-    // "client/src/context/auth.test.js",
-    // "client/src/pages/CategoryProduct.js",
-    // "client/src/pages/ProductDetails.js",
-    // "client/src/components/AdminMenu.js"
+    "client/src/pages/user/Profile.js",
+    "client/src/components/AdminMenu.js",
+    "client/src/context/auth.test.js",
+    "client/src/pages/CategoryProduct.js",
+    "client/src/pages/ProductDetails.js",
+    "client/src/components/AdminMenu.js"
   ],
   coverageThreshold: {
     global: {

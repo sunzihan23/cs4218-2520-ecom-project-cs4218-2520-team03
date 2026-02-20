@@ -4,6 +4,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import Products from "./Products";
 
+//Chen Zhiruo A0256855N
 jest.mock("axios");
 jest.mock("react-hot-toast", () => ({
     error: jest.fn(),
@@ -26,7 +27,6 @@ jest.mock("react-router-dom", () => ({
     ),
 }));
 
-//Chen Zhiruo A0256855N
 describe("Admin Products page", () => {
     beforeEach(() => {
         jest.clearAllMocks();
@@ -42,7 +42,6 @@ describe("Admin Products page", () => {
             ],
         },
     };
-
     const page2Response = {
         data: {
             page: 2,
@@ -53,7 +52,6 @@ describe("Admin Products page", () => {
             ],
         },
     };
-
     test("calls get product api with params on mount", async () => {
         axios.get.mockResolvedValueOnce(page1Response);
         render(<Products />);
