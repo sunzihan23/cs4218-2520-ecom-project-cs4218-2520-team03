@@ -38,6 +38,7 @@ export default {
     "client/src/components/Footer.js",
     "client/src/components/Header.js",
     "client/src/components/Layout.js",
+    "client/src/components/AdminMenu.js",
     "client/src/pages/admin/AdminDashboard.js",
     "client/src/pages/admin/CreateCategory.js",
     "client/src/pages/admin/CreateProduct.js",
