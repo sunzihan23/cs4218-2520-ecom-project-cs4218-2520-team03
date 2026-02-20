@@ -9,6 +9,22 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import "../styles/CartStyles.css";
 
+// Exported for unit testing
+export const totalPrice = (cart) => {
+  try {
+    let total = 0;
+    cart?.map((item) => {
+      total = total + item.price;
+    });
+    return total.toLocaleString("en-US", {
+      style: "currency",
+      currency: "USD",
+    });
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 const CartPage = () => {
   const [auth, setAuth] = useAuth();
   const [cart, setCart] = useCart();
@@ -16,22 +32,6 @@ const CartPage = () => {
   const [instance, setInstance] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-
-  //total price
-  const totalPrice = () => {
-    try {
-      let total = 0;
-      cart?.map((item) => {
-        total = total + item.price;
-      });
-      return total.toLocaleString("en-US", {
-        style: "currency",
-        currency: "USD",
-      });
-    } catch (error) {
-      console.log(error);
-    }
-  };
   //detele item
   const removeCartItem = (pid) => {
     try {
@@ -130,7 +130,7 @@ const CartPage = () => {
               <h2>Cart Summary</h2>
               <p>Total | Checkout | Payment</p>
               <hr />
-              <h4>Total : {totalPrice()} </h4>
+              <h4>Total : {totalPrice(cart)} </h4>
               {auth?.user?.address ? (
                 <>
                   <div className="mb-3">
