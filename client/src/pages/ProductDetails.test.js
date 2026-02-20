@@ -3,6 +3,7 @@ import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import axios from "axios";
 import ProductDetails from "./ProductDetails";
 
+//Chen Zhiruo A0256855N
 jest.mock("axios");
 jest.mock("./../components/Layout", () => {
     return function MockLayout({ children }) {

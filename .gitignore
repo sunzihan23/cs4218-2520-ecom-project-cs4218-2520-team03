@@ -5,3 +5,5 @@ node_modules
 /playwright/.cache/
 /coverage/
 .env
+*EXAMPLES.md
+/sonar-project.properties

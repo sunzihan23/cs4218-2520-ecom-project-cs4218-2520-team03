@@ -1,3 +1,4 @@
+// Sun Zihan, A0259581R
 import userModel from "../models/userModel.js";
 import orderModel from "../models/orderModel.js";
 
@@ -7,37 +8,35 @@ import JWT from "jsonwebtoken";
 export const registerController = async (req, res) => {
   try {
     const { name, email, password, phone, address, answer } = req.body;
-    //validations
+    
     if (!name) {
-      return res.send({ error: "Name is Required" });
+      return res.status(400).send({ success: false, message: "Name is required" });
     }
     if (!email) {
-      return res.send({ message: "Email is Required" });
+      return res.status(400).send({ success: false, message: "Email is required" });
     }
-    if (!password) {
-      return res.send({ message: "Password is Required" });
+    if (!password || password.length < 6) {
+      return res.status(400).send({ success: false, message: "Password is required and should be at least 6 characters long" });
     }
     if (!phone) {
-      return res.send({ message: "Phone no is Required" });
+      return res.status(400).send({ success: false, message: "Phone number is required" });
     }
     if (!address) {
-      return res.send({ message: "Address is Required" });
+      return res.status(400).send({ success: false, message: "Address is required" });
     }
     if (!answer) {
-      return res.send({ message: "Answer is Required" });
+      return res.status(400).send({ success: false, message: "Answer is required" });
     }
-    //check user
+
     const exisitingUser = await userModel.findOne({ email });
-    //exisiting user
     if (exisitingUser) {
       return res.status(200).send({
         success: false,
-        message: "Already Register please login",
+        message: "Already registered, please login",
       });
     }
-    //register user
+
     const hashedPassword = await hashPassword(password);
-    //save
     const user = await new userModel({
       name,
       email,
@@ -49,14 +48,14 @@ export const registerController = async (req, res) => {
 
     res.status(201).send({
       success: true,
-      message: "User Register Successfully",
+      message: "Registered successfully, please login", 
       user,
     });
   } catch (error) {
     console.log(error);
     res.status(500).send({
       success: false,
-      message: "Errro in Registeration",
+      message: "Failed to register user",
       error,
     });
   }
@@ -78,14 +77,16 @@ export const loginController = async (req, res) => {
     if (!user) {
       return res.status(404).send({
         success: false,
-        message: "Email is not registerd",
+        message: "Email is not registered",
       });
     }
     const match = await comparePassword(password, user.password);
     if (!match) {
-      return res.status(200).send({
+      // Sun Zihan, A0259581R
+      // corrected status code to 401 unauthorised 
+      return res.status(401).send({
         success: false,
-        message: "Invalid Password",
+        message: "Invalid password",
       });
     }
     //token
@@ -94,7 +95,7 @@ export const loginController = async (req, res) => {
     });
     res.status(200).send({
       success: true,
-      message: "login successfully",
+      message: "Login successful",
       user: {
         _id: user._id,
         name: user.name,
@@ -109,7 +110,7 @@ export const loginController = async (req, res) => {
     console.log(error);
     res.status(500).send({
       success: false,
-      message: "Error in login",
+      message: "Login failed",
       error,
     });
   }
@@ -120,14 +121,25 @@ export const loginController = async (req, res) => {
 export const forgotPasswordController = async (req, res) => {
   try {
     const { email, answer, newPassword } = req.body;
+    // Sun Zihan, A0259581R
+    // email, answer and password checks should return 400
     if (!email) {
-      res.status(400).send({ message: "Emai is required" });
+      return res.status(400).send({ 
+        success: false,
+        message: "Email is required"
+      }); 
     }
     if (!answer) {
-      res.status(400).send({ message: "answer is required" });
+      return res.status(400).send({ 
+        success: false,
+        message: "Answer is required"
+      });
     }
     if (!newPassword) {
-      res.status(400).send({ message: "New Password is required" });
+      return res.status(400).send({ 
+        success: false,
+        message: "New password is required" 
+      });
     }
     //check
     const user = await userModel.findOne({ email, answer });
@@ -135,14 +147,14 @@ export const forgotPasswordController = async (req, res) => {
     if (!user) {
       return res.status(404).send({
         success: false,
-        message: "Wrong Email Or Answer",
+        message: "Wrong email or answer",
       });
     }
     const hashed = await hashPassword(newPassword);
     await userModel.findByIdAndUpdate(user._id, { password: hashed });
     res.status(200).send({
       success: true,
-      message: "Password Reset Successfully",
+      message: "Password has been reset successfully",
     });
   } catch (error) {
     console.log(error);
@@ -171,7 +183,7 @@ export const updateProfileController = async (req, res) => {
     const user = await userModel.findById(req.user._id);
     //password
     if (password && password.length < 6) {
-      return res.json({ error: "Passsword is required and 6 character long" });
+      return res.json({ error: "Passsword is required and should be 6 characters long" });
     }
     const hashedPassword = password ? await hashPassword(password) : undefined;
     const updatedUser = await userModel.findByIdAndUpdate(
@@ -186,14 +198,14 @@ export const updateProfileController = async (req, res) => {
     );
     res.status(200).send({
       success: true,
-      message: "Profile Updated SUccessfully",
+      message: "Profile updated successfully",
       updatedUser,
     });
   } catch (error) {
     console.log(error);
     res.status(400).send({
       success: false,
-      message: "Error WHile Update profile",
+      message: "Error while updating profile",
       error,
     });
   }
@@ -211,7 +223,7 @@ export const getOrdersController = async (req, res) => {
     console.log(error);
     res.status(500).send({
       success: false,
-      message: "Error WHile Geting Orders",
+      message: "Error while getting orders",
       error,
     });
   }
@@ -229,7 +241,7 @@ export const getAllOrdersController = async (req, res) => {
     console.log(error);
     res.status(500).send({
       success: false,
-      message: "Error WHile Geting Orders",
+      message: "Error while getting orders",
       error,
     });
   }
@@ -250,7 +262,7 @@ export const orderStatusController = async (req, res) => {
     console.log(error);
     res.status(500).send({
       success: false,
-      message: "Error While Updateing Order",
+      message: "Error while updating orders",
       error,
     });
   }
