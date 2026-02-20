@@ -81,7 +81,6 @@ export const getProductController = async (req, res) => {
   try {
     const perPage = Math.max(1, Number(req.query.perPage) || 12);
     const page = Math.max(1, Number(req.query.page) || 1);
-
     const products = await productModel
         .find({})
         .populate("category")
