@@ -21,9 +21,9 @@ export default {
 
   // only run these tests
   testMatch: ["<rootDir>/client/src/components/UserMenu.test.js",
-    "<rootDir>/client/src/components/Footer.test.js",
-    "<rootDir>/client/src/components/Spinner.test.js",
-    "<rootDir>/client/src/components/Layout.test.js",
+    // "<rootDir>/client/src/components/Footer.test.js",
+    // "<rootDir>/client/src/components/Spinner.test.js",
+    // "<rootDir>/client/src/components/Layout.test.js",
     // "<rootDir>/client/src/pages/Categories.test.js",
     // "<rootDir>/client/src/pages/Contact.test.js",
     // "<rootDir>/client/src/pages/Policy.test.js",
@@ -31,16 +31,17 @@ export default {
     // "<rootDir>/client/src/pages/About.test.js",
     // "<rootDir>/client/src/pages/user/Dashboard.test.js",
     // "<rootDir>/client/src/context/search.test.js",
-    "<rootDir>/client/src/hooks/useCategory.test.js",],
+    // "<rootDir>/client/src/hooks/useCategory.test.js",
+    "<rootDir>/client/src/components/Routes/Private.test.js",],
 
   // "<rootDir>/client/src/pages/Auth/*.test.js", 
 
   // jest code coverage
   collectCoverage: true,
   collectCoverageFrom: ["client/src/components/UserMenu.test.js",
-    "<rootDir>/client/src/components/Footer.test.js",
-    "<rootDir>/client/src/components/Spinner.test.js",
-    "<rootDir>/client/src/components/Layout.test.js",
+    // "<rootDir>/client/src/components/Footer.test.js",
+    // "<rootDir>/client/src/components/Spinner.test.js",
+    // "<rootDir>/client/src/components/Layout.test.js",
     // "<rootDir>/client/src/pages/Categories.test.js",
     // "<rootDir>/client/src/pages/Contact.test.js",
     // "<rootDir>/client/src/pages/Policy.test.js",
@@ -48,7 +49,8 @@ export default {
     // "<rootDir>/client/src/pages/About.test.js",
     // "<rootDir>/client/src/pages/user/Dashboard.test.js",
     // "<rootDir>/client/src/context/search.test.js",
-    "<rootDir>/client/src/hooks/useCategory.test.js",],
+    // "<rootDir>/client/src/hooks/useCategory.test.js",
+    "<rootDir>/client/src/components/Routes/Private.test.js",],
   coverageThreshold: {
     global: {
       lines: 100,
