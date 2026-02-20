@@ -22,6 +22,7 @@ export default {
   // only run these tests
   testMatch: ["<rootDir>/client/src/components/UserMenu.test.js",
     "<rootDir>/client/src/components/Footer.test.js",
+    "<rootDir>/client/src/components/Spinner.test.js",
     "<rootDir>/client/src/pages/Categories.test.js",
     "<rootDir>/client/src/pages/Contact.test.js",
     "<rootDir>/client/src/pages/Policy.test.js",
@@ -36,6 +37,7 @@ export default {
   collectCoverage: true,
   collectCoverageFrom: ["client/src/components/UserMenu.test.js",
     "<rootDir>/client/src/components/Footer.test.js",
+    "<rootDir>/client/src/components/Spinner.test.js",
     "<rootDir>/client/src/pages/Categories.test.js",
     "<rootDir>/client/src/pages/Contact.test.js",
     "<rootDir>/client/src/pages/Policy.test.js",
