@@ -1,3 +1,4 @@
+// Sun Zihan, A0259581R
 import React, { useState } from "react";
 import Layout from "./../../components/Layout";
 import axios from "axios";
@@ -10,27 +11,44 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [auth, setAuth] = useAuth();
+  const [errors, setErrors] = useState({});
 
   const navigate = useNavigate();
   const location = useLocation();
 
-  // form function
+  const validate = () => {
+    let tempErrors = {};
+    
+    // Standard Email Regex (checks for @ and .domain)
+    const emailRegex = /^\S+@\S+\.\S+$/;
+
+    if (!email) {
+      tempErrors.email = "Email is required";
+    } else if (!emailRegex.test(email)) {
+      tempErrors.email = "Please enter a valid email address (eg. name@example.com)";
+    }
+
+    if (!password) {
+      tempErrors.password = "Password is required";
+    }
+    
+    setErrors(tempErrors);
+    return Object.keys(tempErrors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!validate()) {
+      toast.error("Please fix the errors in the form");
+      return;
+    }
+
     try {
-      const res = await axios.post("/api/v1/auth/login", {
-        email,
-        password,
-      });
+      const res = await axios.post("/api/v1/auth/login", { email, password });
+      
       if (res && res.data.success) {
-        toast.success(res.data && res.data.message, {
-          duration: 5000,
-          icon: "🙏",
-          style: {
-            background: "green",
-            color: "white",
-          },
-        });
+        toast.success(res.data.message || "Login successful");
         setAuth({
           ...auth,
           user: res.data.user,
@@ -39,49 +57,58 @@ const Login = () => {
         localStorage.setItem("auth", JSON.stringify(res.data));
         navigate(location.state || "/");
       } else {
-        toast.error(res.data.message);
+        toast.error(res.data.message || "Login failed");
       }
     } catch (error) {
-      console.log(error);
-      toast.error("Something went wrong");
+      const errorMsg = error.response?.data?.message || "Something went wrong";
+      toast.error(errorMsg);
     }
   };
+
   return (
     <Layout title="Login - Ecommerce App">
-      <div className="form-container " style={{ minHeight: "90vh" }}>
-        <form onSubmit={handleSubmit}>
+      <div className="form-container" style={{ minHeight: "90vh" }}>
+        <form onSubmit={handleSubmit} noValidate>
           <h4 className="title">LOGIN FORM</h4>
-
+          
           <div className="mb-3">
             <input
               type="email"
               autoFocus
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="form-control"
-              id="exampleInputEmail1"
-              placeholder="Enter Your Email "
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (errors.email) setErrors({ ...errors, email: "" });
+              }}
+              className={`form-control ${errors.email ? "is-invalid" : ""}`}
+              placeholder="Enter Your Email"
+              id="emailInput"
               required
             />
+            {errors.email && <div className="invalid-feedback">{errors.email}</div>}
           </div>
+
           <div className="mb-3">
             <input
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="form-control"
-              id="exampleInputPassword1"
-              placeholder="Enter Your Password"
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (errors.password) setErrors({ ...errors, password: "" });
+              }}
+              className={`form-control ${errors.password ? "is-invalid" : ""}`}
+              placeholder="Enter your password"
+              id="passwordInput"
               required
             />
+            {errors.password && <div className="invalid-feedback">{errors.password}</div>}
           </div>
+
           <div className="mb-3">
             <button
               type="button"
               className="btn forgot-btn"
-              onClick={() => {
-                navigate("/forgot-password");
-              }}
+              onClick={() => navigate("/forgot-password")}
             >
               Forgot Password
             </button>

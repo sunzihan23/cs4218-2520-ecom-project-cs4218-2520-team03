@@ -40,8 +40,8 @@ export default {
 
   // jest code coverage
   collectCoverage: true,
-  collectCoverageFrom: ["client/src/components/UserMenu.test.js",
-    "<rootDir>/client/src/components/Header.test.js",
+  collectCoverageFrom: ["client/src/components/UserMenu.js",
+    "<rootDir>/client/src/components/Header.js",
     // "<rootDir>/client/src/components/Footer.test.js",
     // "<rootDir>/client/src/components/Spinner.test.js",
     // "<rootDir>/client/src/components/Layout.test.js",
@@ -50,11 +50,11 @@ export default {
     // "<rootDir>/client/src/pages/Policy.test.js",
     // "<rootDir>/client/src/pages/Pagenotfound.test.js",
     // "<rootDir>/client/src/pages/About.test.js",
-    "<rootDir>/client/src/pages/Search.test.js",
+    "<rootDir>/client/src/pages/Search.js",
     // "<rootDir>/client/src/pages/user/Dashboard.test.js",
     // "<rootDir>/client/src/context/search.test.js",
     // "<rootDir>/client/src/hooks/useCategory.test.js",
-    "<rootDir>/client/src/components/Routes/Private.test.js",],
+    "<rootDir>/client/src/components/Routes/Private.js",],
   coverageThreshold: {
     global: {
       lines: 100,

@@ -4,8 +4,9 @@ import categoryModel from "../models/categoryModel.js";
 import fs from "fs";
 import slugify from "slugify";
 
+//Chen Zhiruo A0256855N
 //helper to validate product info
-export function validateProductFields(fields, files) {
+export function validateProductFields(fields, files, requirePhoto) {
   const { name, description, price, category, quantity, shipping } = fields || {};
   const { photo } = files || {};
 
@@ -15,15 +16,17 @@ export function validateProductFields(fields, files) {
   if (!category) return { status: 400, error: "Category is Required" };
   if (!quantity) return { status: 400, error: "Quantity is Required" };
   if (shipping === undefined) return { status: 400, error: "Shipping is Required" };
-  if (!photo) return { status: 400, error: "Photo is Required" };
-  if (photo.size > 1_000_000)
+  if (requirePhoto && !photo) {
+    return { status: 400, error: "Photo is Required" };
+  }
+  if (photo && photo.size > 1_000_000)
     return { status: 400, error: "Photo should be less then 1mb" };
-
   return null;
 }
 
 //helper to attach photo
 export function attachPhoto(productDoc, photo, readFile) {
+  if (!photo) return;
   productDoc.photo.data = readFile(photo.path);
   productDoc.photo.contentType = photo.type;
 }
@@ -34,8 +37,8 @@ export async function saveProductService({
   fields,
   files,
   readFile,
-}) {
-  const validation = validateProductFields(fields, files);
+  requirePhoto }) {
+  const validation = validateProductFields(fields, files, requirePhoto);
   if (validation) return { ok: false, ...validation };
 
   productDoc.set({ ...fields, slug: slugify(fields.name) });
@@ -53,6 +56,7 @@ export const createProductController = async (req, res) => {
       fields: req.fields,
       files: req.files,
       readFile: fs.readFileSync,
+      requirePhoto: true
     });
 
     if (!result.ok)
@@ -75,16 +79,24 @@ export const createProductController = async (req, res) => {
 //get all products
 export const getProductController = async (req, res) => {
   try {
+    const perPage = Math.max(1, Number(req.query.perPage) || 12);
+    const page = Math.max(1, Number(req.query.page) || 1);
     const products = await productModel
-      .find({})
-      .populate("category")
-      .select("-photo")
-      .limit(12)
-      .sort({ createdAt: -1 });
+        .find({})
+        .populate("category")
+        .select("-photo")
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * perPage)
+        .limit(perPage);
+
+    const total = await productModel.countDocuments({});
     res.status(200).send({
       success: true,
+      page,
+      perPage,
+      total,
       countTotal: products.length,
-      message: "ALlProducts ",
+      message: "All Products ",
       products,
     });
   } catch (error) {
@@ -176,6 +188,7 @@ export const updateProductController = async (req, res) => {
       fields: req.fields,
       files: req.files,
       readFile: fs.readFileSync,
+      requirePhoto: false
     });
 
     if (!result.ok)

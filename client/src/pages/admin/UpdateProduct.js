@@ -67,6 +67,10 @@ const UpdateProduct = () => {
         toast.error("Please fill all required fields");
         return;
       }
+      if (photo && photo.size > 1_000_000) {
+        toast.error("Photo should be less than 1mb");
+        return;
+      }
       if (price <= 0) {
         toast.error("Price must be greater than 0");
         return;
