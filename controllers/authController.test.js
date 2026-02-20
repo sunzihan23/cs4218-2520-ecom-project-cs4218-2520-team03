@@ -133,7 +133,7 @@ describe("Auth Controller Unit Tests", () => {
       await loginController(req, res);
 
       expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.send).toHaveBeenCalledWith(expect.objectContaining({ message: "Email is not registerd" }));
+      expect(res.send).toHaveBeenCalledWith(expect.objectContaining({ message: "Email is not registered" }));
     });
 
     it("should deny access with 401 if password comparison fails", async () => {
