@@ -367,19 +367,25 @@ describe("createProductController", () => {
 });
 
 describe("getProductController", () => {
-  describe("upon successful call", () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+    });
+  describe("upon successful call with no pagination params", () => {
     let res;
     let chain;
     const products = [{ _id: 1 }, { _id: 2 }];
+    const total = 50;
 
     beforeEach(async () => {
       res = makeRes();
       chain = makeThenableQuery(products);
       productModel.find.mockReturnValue(chain);
-      await getProductController({}, res);
+      productModel.countDocuments.mockResolvedValue(total);
+      const req = { query: {} };
+      await getProductController(req, res);
     });
 
-    test("calls find", () => {
+    test("calls find with nothing", () => {
       expect(productModel.find).toHaveBeenCalledWith({});
     });
 
@@ -387,38 +393,82 @@ describe("getProductController", () => {
       expect(chain.populate).toHaveBeenCalledWith("category");
     });
 
-    test("selects photo", () => {
+    test("selects -photo", () => {
       expect(chain.select).toHaveBeenCalledWith("-photo");
-    });
-
-    test("limits to 12", () => {
-      expect(chain.limit).toHaveBeenCalledWith(12);
     });
 
     test("sorts by createdAt descending", () => {
       expect(chain.sort).toHaveBeenCalledWith({ createdAt: -1 });
     });
 
+    test("skips 0 for page=1", () => {
+      expect(chain.skip).toHaveBeenCalledWith(0);
+    });
+
+    test("limits to 12", () => {
+      expect(chain.limit).toHaveBeenCalledWith(12);
+    });
+
+    test("counts total documents", () => {
+        expect(productModel.countDocuments).toHaveBeenCalledWith({});
+    });
+
     test("returns 200", () => {
       expect(res.status).toHaveBeenCalledWith(200);
     });
 
-    test("sends payload with countTotal==2", () => {
-      expect(res.send).toHaveBeenCalledWith(
-        expect.objectContaining({ countTotal: 2 }),
-      );
+    test("sends payload containing pagination metadata", () => {
+        expect(res.send).toHaveBeenCalledWith(
+            expect.objectContaining({
+                success: true,
+                total,
+                countTotal: products.length,
+                page: 1,
+                perPage: 12,
+            }),
+        );
     });
   });
+  describe("upon successful call with pagination params", () => {
+        let res;
+        let chain;
+        const products = [{ _id: 1 }, { _id: 2 }];
+        const total = 10;
+
+        beforeEach(async () => {
+            res = makeRes();
+            chain = makeThenableQuery(products);
+            productModel.find.mockReturnValue(chain);
+            productModel.countDocuments.mockResolvedValue(total);
+            const req = { query: { page: "3", perPage: "6" } };
+            await getProductController(req, res);
+        });
+        test("computes skip correctly", () => {
+            expect(chain.skip).toHaveBeenCalledWith(12);
+        });
+        test("limits perPage from query", () => {
+            expect(chain.limit).toHaveBeenCalledWith(6);
+        });
+        test("sends payload containing parsed page params", () => {
+            expect(res.send).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    page: 3,
+                    perPage: 6,
+                }),
+            );
+        });
+    });
   describe("when unexpected error happens", () => {
     let statusCode, sentBody;
     beforeAll(async () => {
       const res = {};
+      const req = { query: {} };
       res.status = jest.fn((code) => ((statusCode = code), res));
       res.send = jest.fn((body) => ((sentBody = body), res));
       productModel.find.mockImplementation(() => {
         throw new Error("get product fail");
       });
-      await getProductController({}, res);
+      await getProductController(req, res);
     });
     test("returns 500 status code", () => {
       expect(statusCode).toBe(500);
