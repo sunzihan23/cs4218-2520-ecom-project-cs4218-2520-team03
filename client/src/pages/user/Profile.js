@@ -1,56 +1,73 @@
+// Sun Zihan, A0259581R
 import React, { useState, useEffect } from "react";
 import UserMenu from "../../components/UserMenu";
 import Layout from "./../../components/Layout";
 import { useAuth } from "../../context/auth";
 import toast from "react-hot-toast";
 import axios from "axios";
+
 const Profile = () => {
-  //context
   const [auth, setAuth] = useAuth();
-  //state
+  
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
 
-  //get user data
   useEffect(() => {
-    const { email, name, phone, address } = auth?.user;
-    setName(name);
-    setPhone(phone);
-    setEmail(email);
-    setAddress(address);
+    if (auth?.user) {
+      const { email, name, phone, address } = auth.user;
+      setName(name || "");
+      setPhone(phone || "");
+      setEmail(email || "");
+      setAddress(address || "");
+    }
   }, [auth?.user]);
 
-  // form function
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (password && password !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
     try {
-      const { data } = await axios.put("/api/v1/auth/profile", {
-        name,
-        email,
-        password,
-        phone,
-        address,
-      });
-      // Sun Zihan, A0259581R
-      // correct typo
+      const profileData = { name, email, phone, address };
+      if (password && password.trim().length > 0) {
+        profileData.password = password;
+      }
+
+      const { data } = await axios.put("/api/v1/auth/profile", profileData);
+
       if (data?.error) {
-        toast.error(data?.error);
+        toast.error(data.error);
       } else {
-        setAuth({ ...auth, user: data?.updatedUser });
-        let ls = localStorage.getItem("auth");
-        ls = JSON.parse(ls);
-        ls.user = data.updatedUser;
-        localStorage.setItem("auth", JSON.stringify(ls));
+        const updatedUser = data?.updatedUser;
+        setAuth({ ...auth, user: updatedUser });
+
+        try {
+          const ls = JSON.parse(localStorage.getItem("auth"));
+          if (ls) {
+            ls.user = updatedUser;
+            localStorage.setItem("auth", JSON.stringify(ls));
+          }
+        } catch (lsError) {
+          console.error("LocalStorage update failed", lsError);
+        }
+
+        setPassword(""); 
+        setConfirmPassword(""); 
         toast.success("Profile Updated Successfully");
       }
     } catch (error) {
-      console.log(error);
-      toast.error("Something went wrong");
+      const errorMsg = error.response?.data?.message || "Something went wrong";
+      toast.error(errorMsg);
     }
   };
+
   return (
     <Layout title={"Your Profile"}>
       <div className="container-fluid m-3 p-3">
@@ -59,61 +76,77 @@ const Profile = () => {
             <UserMenu />
           </div>
           <div className="col-md-9">
-            <div className="form-container ">
+            <div className="form-container">
               <form onSubmit={handleSubmit}>
                 <h4 className="title">USER PROFILE</h4>
+                
                 <div className="mb-3">
                   <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     className="form-control"
-                    id="exampleInputEmail1"
-                    placeholder="Enter Your Name"
+                    id="profileName"
+                    placeholder="Enter your name"
                     autoFocus
+                    required
                   />
                 </div>
+
                 <div className="mb-3">
                   <input
                     type="email"
                     value={email}
-                    // Sun Zihan, A0259581R
-                    // remove onChange as function to change email is disabled
-                    // onChange={(e) => setEmail(e.target.value)}
                     className="form-control"
-                    id="exampleInputEmail1"
-                    placeholder="Enter Your Email "
+                    id="profileEmail"
+                    placeholder="Enter your email"
                     disabled
                   />
                 </div>
+
                 <div className="mb-3">
                   <input
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="form-control"
-                    id="exampleInputPassword1"
-                    placeholder="Enter Your Password"
+                    id="profilePassword"
+                    placeholder="Enter your new password"
                   />
                 </div>
+
+                <div className="mb-3">
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="form-control"
+                    id="profileConfirmPassword"
+                    placeholder="Confirm your new password"
+                  />
+                </div>
+
                 <div className="mb-3">
                   <input
                     type="text"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     className="form-control"
-                    id="exampleInputEmail1"
-                    placeholder="Enter Your Phone"
+                    id="profilePhone"
+                    placeholder="Enter your phone"
+                    required
                   />
                 </div>
+
                 <div className="mb-3">
                   <input
                     type="text"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     className="form-control"
-                    id="exampleInputEmail1"
-                    placeholder="Enter Your Address"
+                    id="profileAddress"
+                    placeholder="Enter your address"
+                    required
                   />
                 </div>
 
