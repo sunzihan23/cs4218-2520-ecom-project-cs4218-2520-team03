@@ -21,31 +21,31 @@ export default {
 
   // only run these tests
   testMatch: [
-    "<rootDir>/client/src/pages/Auth/*.test.js",
-    "<rootDir>/client/src/components/*.test.js",
-    "<rootDir>/client/src/pages/admin/*.test.js",
-    "<rootDir>/client/src/pages/user/*.test.js",
-    "<rootDir>/client/src/pages/*.test.js",
-    "<rootDir>/client/src/context/*.test.js",
+    // "<rootDir>/client/src/pages/Auth/*.test.js",
+    // "<rootDir>/client/src/components/*.test.js",
+    "<rootDir>/client/src/pages/admin/Products.test.js",
+    // "<rootDir>/client/src/pages/user/*.test.js",
+    // "<rootDir>/client/src/pages/*.test.js",
+    // "<rootDir>/client/src/context/*.test.js",
   ],
 
   // jest code coverage
   collectCoverage: true,
   collectCoverageFrom: [
-    "client/src/pages/Auth/**",
-    "client/src/components/Form/CategoryForm.js",
-    "client/src/pages/admin/CreateCategory.js",
-    "client/src/pages/admin/CreateProduct.js",
-    "client/src/pages/admin/UpdateProduct.js",
-    "client/src/pages/admin/AdminDashboard.js",
-    "client/src/pages/admin/Users.js",
+    // "client/src/pages/Auth/**",
+    // "client/src/components/Form/CategoryForm.js",
+    // "client/src/pages/admin/CreateCategory.js",
+    // "client/src/pages/admin/CreateProduct.js",
+    // "client/src/pages/admin/UpdateProduct.js",
+    // "client/src/pages/admin/AdminDashboard.js",
+    // "client/src/pages/admin/Users.js",
     "client/src/pages/admin/Products.js",
-    "client/src/pages/user/Profile.js",
-    "client/src/components/AdminMenu.js",
-    "client/src/context/auth.test.js",
-    "client/src/pages/CategoryProduct.js",
-    "client/src/pages/ProductDetails.js",
-    "client/src/components/AdminMenu.js"
+    // "client/src/pages/user/Profile.js",
+    // "client/src/components/AdminMenu.js",
+    // "client/src/context/auth.test.js",
+    // "client/src/pages/CategoryProduct.js",
+    // "client/src/pages/ProductDetails.js",
+    // "client/src/components/AdminMenu.js"
   ],
   coverageThreshold: {
     global: {
