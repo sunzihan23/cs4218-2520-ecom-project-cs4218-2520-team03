@@ -60,7 +60,7 @@ const Profile = () => {
 
         setPassword(""); 
         setConfirmPassword(""); 
-        toast.success("Profile Updated Successfully");
+        toast.success("Profile updated successfully");
       }
     } catch (error) {
       const errorMsg = error.response?.data?.message || "Something went wrong";
