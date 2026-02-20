@@ -29,7 +29,7 @@ const Products = () => {
 
   //lifecycle method
   useEffect(() => {
-    getAllProducts(1);
+    getAllProducts();
   }, []);
   return (
     <Layout>
