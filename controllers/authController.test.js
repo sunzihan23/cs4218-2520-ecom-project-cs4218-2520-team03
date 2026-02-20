@@ -4,6 +4,7 @@ import {
   loginController,
   forgotPasswordController,
   testController,
+  updateProfileController,
   getOrdersController,
   getAllOrdersController,
   orderStatusController,
@@ -228,6 +229,178 @@ describe("Auth Controller Unit Tests", () => {
       testController(req, res);
 
       expect(res.send).toHaveBeenCalledWith(expect.objectContaining({ error: mockError }));
+    });
+  });
+
+  // --- updateProfileController ---
+  describe("updateProfileController", () => {
+    let consoleLogSpy;
+
+    beforeAll(() => {
+      consoleLogSpy = jest.spyOn(console, "log").mockImplementation();
+    });
+    afterAll(() => {
+      consoleLogSpy.mockRestore();
+    });
+
+    it("should fetch current user with userModel.findById(req.user._id)", async () => {
+      const userId = "user123";
+      const existingUser = { _id: userId, name: "Old", password: "oldHash", phone: "1", address: "addr" };
+      req.user = { _id: userId };
+      req.body = { name: "NewName" };
+      userModel.findById = jest.fn().mockResolvedValue(existingUser);
+      userModel.findByIdAndUpdate = jest.fn().mockResolvedValue({ ...existingUser, name: "NewName" });
+
+      await updateProfileController(req, res);
+
+      expect(userModel.findById).toHaveBeenCalledWith(userId);
+    });
+
+    it("should return JSON error when password provided and length < 6 (no status set)", async () => {
+      req.user = { _id: "user1" };
+      req.body = { password: "12345" };
+      const existingUser = { _id: "user1", name: "U", password: "h", phone: "1", address: "a" };
+      userModel.findById = jest.fn().mockResolvedValue(existingUser);
+
+      await updateProfileController(req, res);
+
+      expect(res.json).toHaveBeenCalledWith({
+        error: "Passsword is required and should be 6 characters long",
+      });
+      expect(res.status).not.toHaveBeenCalled();
+      expect(userModel.findByIdAndUpdate).not.toHaveBeenCalled();
+    });
+
+    it("should call hashPassword when password is provided and valid", async () => {
+      req.user = { _id: "user1" };
+      req.body = { password: "validpassword" };
+      const existingUser = { _id: "user1", name: "U", password: "oldHash", phone: "1", address: "a" };
+      userModel.findById = jest.fn().mockResolvedValue(existingUser);
+      hashPassword.mockResolvedValue("newHashedPassword");
+      userModel.findByIdAndUpdate = jest.fn().mockResolvedValue({
+        ...existingUser,
+        password: "newHashedPassword",
+      });
+
+      await updateProfileController(req, res);
+
+      expect(hashPassword).toHaveBeenCalledWith("validpassword");
+    });
+
+    it("should call findByIdAndUpdate with user id, update object, and { new: true }", async () => {
+      const userId = "user456";
+      const existingUser = { _id: userId, name: "Jane", password: "hash", phone: "99", address: "Home" };
+      req.user = { _id: userId };
+      req.body = { name: "Jane Doe", phone: "88" };
+      userModel.findById = jest.fn().mockResolvedValue(existingUser);
+      userModel.findByIdAndUpdate = jest.fn().mockResolvedValue({
+        _id: userId,
+        name: "Jane Doe",
+        password: "hash",
+        phone: "88",
+        address: "Home",
+      });
+
+      await updateProfileController(req, res);
+
+      expect(userModel.findByIdAndUpdate).toHaveBeenCalledWith(
+        userId,
+        {
+          name: "Jane Doe",
+          password: existingUser.password,
+          phone: "88",
+          address: "Home",
+        },
+        { new: true }
+      );
+    });
+
+    it("should use name || user.name, phone || user.phone, address || user.address in update", async () => {
+      const existingUser = { _id: "u1", name: "A", password: "p", phone: "1", address: "Addr" };
+      req.user = { _id: "u1" };
+      req.body = { address: "NewAddr" };
+      userModel.findById = jest.fn().mockResolvedValue(existingUser);
+      userModel.findByIdAndUpdate = jest.fn().mockResolvedValue({ ...existingUser, address: "NewAddr" });
+
+      await updateProfileController(req, res);
+
+      expect(userModel.findByIdAndUpdate).toHaveBeenCalledWith(
+        "u1",
+        {
+          name: "A",
+          password: "p",
+          phone: "1",
+          address: "NewAddr",
+        },
+        { new: true }
+      );
+    });
+
+    it("should use hashedPassword || user.password when password is provided", async () => {
+      req.user = { _id: "u1" };
+      req.body = { password: "newpass6" };
+      const existingUser = { _id: "u1", name: "A", password: "oldHash", phone: "1", address: "a" };
+      userModel.findById = jest.fn().mockResolvedValue(existingUser);
+      hashPassword.mockResolvedValue("newHash");
+      userModel.findByIdAndUpdate = jest.fn().mockResolvedValue({ ...existingUser, password: "newHash" });
+
+      await updateProfileController(req, res);
+
+      expect(userModel.findByIdAndUpdate).toHaveBeenCalledWith(
+        "u1",
+        expect.objectContaining({
+          password: "newHash",
+        }),
+        { new: true }
+      );
+    });
+
+    it("should not include email in findByIdAndUpdate update object", async () => {
+      req.user = { _id: "u1" };
+      req.body = { name: "X", email: "new@email.com", phone: "1", address: "a" };
+      const existingUser = { _id: "u1", name: "Old", password: "p", phone: "1", address: "a" };
+      userModel.findById = jest.fn().mockResolvedValue(existingUser);
+      userModel.findByIdAndUpdate = jest.fn().mockResolvedValue({ ...existingUser, name: "X" });
+
+      await updateProfileController(req, res);
+
+      const updateArg = userModel.findByIdAndUpdate.mock.calls[0][1];
+      expect(updateArg).not.toHaveProperty("email");
+      expect(updateArg.name).toBe("X");
+    });
+
+    it("should return 200 with success true, message and updatedUser on success", async () => {
+      const updatedUser = { _id: "u1", name: "Updated", password: "h", phone: "1", address: "a" };
+      req.user = { _id: "u1" };
+      req.body = { name: "Updated" };
+      userModel.findById = jest.fn().mockResolvedValue({ _id: "u1", name: "Old", password: "h", phone: "1", address: "a" });
+      userModel.findByIdAndUpdate = jest.fn().mockResolvedValue(updatedUser);
+
+      await updateProfileController(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.send).toHaveBeenCalledWith({
+        success: true,
+        message: "Profile updated successfully",
+        updatedUser,
+      });
+    });
+
+    it("should return 400 with success false and error message when update fails", async () => {
+      req.user = { _id: "u1" };
+      req.body = {};
+      const dbError = new Error("Database error");
+      userModel.findById = jest.fn().mockRejectedValue(dbError);
+
+      await updateProfileController(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.send).toHaveBeenCalledWith({
+        success: false,
+        message: "Error while updating profile",
+        error: dbError,
+      });
+      expect(consoleLogSpy).toHaveBeenCalledWith(dbError);
     });
   });
 
