@@ -43,6 +43,14 @@ const CreateProduct = () => {
         toast.error("Please fill all required fields");
         return;
       }
+      if (!photo) {
+        toast.error("A photo of the product is required");
+        return;
+      }
+      if (photo.size > 1_000_000) {
+        toast.error("Photo should be less than 1mb");
+        return;
+      }
       if (price <= 0) {
         toast.error("Price must be greater than 0");
         return;
@@ -71,7 +79,7 @@ const CreateProduct = () => {
       }
     } catch (error) {
       console.log(error);
-      toast.error("something went wrong");
+      toast.error(error.message);
     }
   };
 
