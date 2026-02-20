@@ -5,7 +5,6 @@ import { BrowserRouter } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
 import CreateProduct from "./CreateProduct";
-import { fi } from "date-fns/locale";
 
 jest.mock("axios");
 jest.mock("react-hot-toast");
@@ -179,6 +178,7 @@ describe("CreateProduct Component", () => {
     });
 
     test("shows error toast on invalid price input", async () => {
+      global.URL.createObjectURL = jest.fn(() => "mock-url");
       axios.get.mockResolvedValue({
         data: { success: true, category: mockCategories },
       });
@@ -188,7 +188,7 @@ describe("CreateProduct Component", () => {
       await waitFor(() => {
         expect(screen.getByPlaceholderText("write a name")).toBeInTheDocument();
       });
-      // fill in other required fields to pass the required field validation
+      
       fireEvent.change(screen.getByPlaceholderText("write a name"), {
         target: { value: "Test Product" },
       });
@@ -205,6 +205,14 @@ describe("CreateProduct Component", () => {
       const selects = screen.getAllByRole("combobox");
       const select = selects[0];
       fireEvent.change(select, { target: { value: "2" } });
+      const file = new File(["photo"], "photo.png", { type: "image/png" });
+
+      const uploadLabel = screen.getByText("Upload Photo");
+      const input = uploadLabel
+        .closest("label")
+        .querySelector('input[type="file"]');
+
+      fireEvent.change(input, { target: { files: [file] } });
 
       fireEvent.click(screen.getByRole("button", { name: "CREATE PRODUCT" }));
 
@@ -215,6 +223,7 @@ describe("CreateProduct Component", () => {
       });
     });
     test("shows error toast on invalid quantity input", async () => {
+      global.URL.createObjectURL = jest.fn(() => "mock-url");
       axios.get.mockResolvedValue({
         data: { success: true, category: mockCategories },
       });
@@ -224,7 +233,7 @@ describe("CreateProduct Component", () => {
       await waitFor(() => {
         expect(screen.getByPlaceholderText("write a name")).toBeInTheDocument();
       });
-      // fill in other required fields to pass the required field validation
+      
       fireEvent.change(screen.getByPlaceholderText("write a name"), {
         target: { value: "Test Product" },
       });
@@ -242,6 +251,14 @@ describe("CreateProduct Component", () => {
       fireEvent.change(screen.getByPlaceholderText("write a quantity"), {
         target: { value: "-10" },
       });
+      const file = new File(["photo"], "photo.png", { type: "image/png" });
+
+      const uploadLabel = screen.getByText("Upload Photo");
+      const input = uploadLabel
+        .closest("label")
+        .querySelector('input[type="file"]');
+
+      fireEvent.change(input, { target: { files: [file] } });
       fireEvent.click(screen.getByRole("button", { name: "CREATE PRODUCT" }));
 
       await waitFor(() => {
@@ -289,10 +306,8 @@ describe("CreateProduct Component", () => {
       const selects = screen.getAllByRole("combobox");
       const select = selects[0];
       fireEvent.change(select, { target: { value: "2" } });
-      // upload photo (robust)
       const file = new File(["photo"], "photo.png", { type: "image/png" });
 
-      // find the label button, then its input
       const uploadLabel = screen.getByText("Upload Photo");
       const input = uploadLabel
         .closest("label")
@@ -320,6 +335,7 @@ describe("CreateProduct Component", () => {
   });
 
   test("shows success toast and redirects on successful product creation", async () => {
+    global.URL.createObjectURL = jest.fn(() => "mock-url");
     axios.get.mockResolvedValue({
       data: { success: true, category: mockCategories },
     });
@@ -349,6 +365,14 @@ describe("CreateProduct Component", () => {
     const selects = screen.getAllByRole("combobox");
     const select = selects[0];
     fireEvent.change(select, { target: { value: "1" } });
+    const file = new File(["photo"], "photo.png", { type: "image/png" });
+
+    const uploadLabel = screen.getByText("Upload Photo");
+    const input = uploadLabel
+      .closest("label")
+      .querySelector('input[type="file"]');
+
+    fireEvent.change(input, { target: { files: [file] } });
     fireEvent.click(screen.getByRole("button", { name: "CREATE PRODUCT" }));
 
     await waitFor(() => {
@@ -360,6 +384,7 @@ describe("CreateProduct Component", () => {
   });
 
   test("shows error toast on product creation failure", async () => {
+    global.URL.createObjectURL = jest.fn(() => "mock-url");
     axios.get.mockResolvedValue({
       data: { success: true, category: mockCategories },
     });
@@ -388,6 +413,13 @@ describe("CreateProduct Component", () => {
     const selects = screen.getAllByRole("combobox");
     const select = selects[0];
     fireEvent.change(select, { target: { value: "3" } });
+    const file = new File(["photo"], "photo.png", { type: "image/png" });
+    const uploadLabel = screen.getByText("Upload Photo");
+    const input = uploadLabel
+      .closest("label")
+      .querySelector('input[type="file"]');
+
+    fireEvent.change(input, { target: { files: [file] } });
     fireEvent.click(screen.getByRole("button", { name: "CREATE PRODUCT" }));
 
     await waitFor(() => {
@@ -396,6 +428,7 @@ describe("CreateProduct Component", () => {
   });
 
   test("shows error toast on product creation exception", async () => {
+    global.URL.createObjectURL = jest.fn(() => "mock-url");
     axios.get.mockResolvedValue({
       data: { success: true, category: mockCategories },
     });
@@ -423,10 +456,18 @@ describe("CreateProduct Component", () => {
     const selects = screen.getAllByRole("combobox");
     const select = selects[0];
     fireEvent.change(select, { target: { value: "1" } });
+    const file = new File(["photo"], "photo.png", { type: "image/png" });
+
+    const uploadLabel = screen.getByText("Upload Photo");
+    const input = uploadLabel
+      .closest("label")
+      .querySelector('input[type="file"]');
+
+    fireEvent.change(input, { target: { files: [file] } });
     fireEvent.click(screen.getByRole("button", { name: "CREATE PRODUCT" }));
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith("something went wrong");
+      expect(toast.error).toHaveBeenCalledWith("Creation exception");
     });
   });
 
@@ -453,6 +494,88 @@ describe("CreateProduct Component", () => {
 
     await waitFor(() => {
       expect(select.value).toBe("false");
+    });
+  });
+  
+  test("shows error toast when missing photo on form submission", async () => {
+    axios.get.mockResolvedValue({
+      data: { success: true, category: mockCategories },
+    });
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText("write a name")).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByPlaceholderText("write a name"), {
+      target: { value: "Test Product" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("write a description"), {
+      target: { value: "This is a pencil" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("write a Price"), {
+      target: { value: "18" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("write a quantity"), {
+      target: { value: "200" },
+    });
+    const selects = screen.getAllByRole("combobox");
+    const select = selects[0];
+    fireEvent.change(select, { target: { value: "2" } });
+
+    fireEvent.click(screen.getByRole("button", { name: "CREATE PRODUCT" }));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "A photo of the product is required",
+      );
+    });
+  });
+
+  test("shows error toast when photo size exceeds limit on form submission", async () => {
+    global.URL.createObjectURL = jest.fn(() => "mock-url");
+    axios.get.mockResolvedValue({
+      data: { success: true, category: mockCategories },
+    });
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText("write a name")).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByPlaceholderText("write a name"), {
+      target: { value: "Test Product" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("write a description"), {
+      target: { value: "This is a pencil" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("write a Price"), {
+      target: { value: "18" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("write a quantity"), {
+      target: { value: "200" },
+    });
+    const selects = screen.getAllByRole("combobox");
+    const select = selects[0];
+    fireEvent.change(select, { target: { value: "2" } });
+    const file = new File(["a".repeat(1_000_001)], "photo.png", {
+      type: "image/png",
+    });
+
+    const uploadLabel = screen.getByText("Upload Photo");
+    const input = uploadLabel
+      .closest("label")
+      .querySelector('input[type="file"]');
+
+    fireEvent.change(input, { target: { files: [file] } });
+    fireEvent.click(screen.getByRole("button", { name: "CREATE PRODUCT" }));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "Photo should be less than 1mb",
+      );
     });
   });
 });

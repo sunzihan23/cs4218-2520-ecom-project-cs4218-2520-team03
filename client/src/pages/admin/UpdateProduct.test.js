@@ -5,7 +5,6 @@ import { BrowserRouter } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
 import UpdateProduct from "./UpdateProduct";
-import { mock } from "node:test";
 
 jest.mock("axios");
 jest.mock("react-hot-toast");
@@ -330,6 +329,7 @@ describe("UpdateProduct Component", () => {
   });
 
   test("shows error toast on invalid price update product", async () => {
+    global.URL.createObjectURL = jest.fn(() => "mock-url");
     axios.get
       .mockResolvedValueOnce({ data: { product: mockProduct } })
       .mockResolvedValueOnce({
@@ -347,6 +347,14 @@ describe("UpdateProduct Component", () => {
     fireEvent.change(screen.getByPlaceholderText("write a Price"), {
       target: { value: "-10" },
     });
+    const file = new File(["photo"], "photo.png", { type: "image/png" });
+    
+    const uploadLabel = screen.getByText("Upload Photo");
+    const input = uploadLabel
+      .closest("label")
+      .querySelector('input[type="file"]');
+
+    fireEvent.change(input, { target: { files: [file] } });
     fireEvent.click(screen.getByText("UPDATE PRODUCT"));
 
     await waitFor(() => {
@@ -355,6 +363,7 @@ describe("UpdateProduct Component", () => {
   });
 
   test("shows error toast on invalid quantity update product", async () => {
+    global.URL.createObjectURL = jest.fn(() => "mock-url");
     axios.get
       .mockResolvedValueOnce({ data: { product: mockProduct } })
       .mockResolvedValueOnce({
@@ -372,6 +381,14 @@ describe("UpdateProduct Component", () => {
     fireEvent.change(screen.getByPlaceholderText("write a quantity"), {
       target: { value: "-5" },
     });
+    const file = new File(["photo"], "photo.png", { type: "image/png" });
+    
+    const uploadLabel = screen.getByText("Upload Photo");
+    const input = uploadLabel
+      .closest("label")
+      .querySelector('input[type="file"]');
+
+    fireEvent.change(input, { target: { files: [file] } });
     fireEvent.click(screen.getByText("UPDATE PRODUCT"));
 
     await waitFor(() => {
@@ -409,6 +426,7 @@ describe("UpdateProduct Component", () => {
   });
 
   test("shows error toast on update failure", async () => {
+    global.URL.createObjectURL = jest.fn(() => "mock-url");
     axios.get
       .mockResolvedValueOnce({ data: { product: mockProduct } })
       .mockResolvedValueOnce({
@@ -430,11 +448,118 @@ describe("UpdateProduct Component", () => {
       expect(screen.getByPlaceholderText("write a Price")).toHaveValue(100);
       expect(screen.getByPlaceholderText("write a quantity")).toHaveValue(10);
     });
-
+    const file = new File(["photo"], "photo.png", { type: "image/png" });
+    
+          const uploadLabel = screen.getByText("Upload Photo");
+          const input = uploadLabel
+            .closest("label")
+            .querySelector('input[type="file"]');
+    
+          fireEvent.change(input, { target: { files: [file] } });
     fireEvent.click(screen.getByText("UPDATE PRODUCT"));
 
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("something went wrong");
+    });
+  });
+  test("shows error toast when missing photo on form submission", async () => {
+    
+    axios.get
+      .mockResolvedValueOnce({
+        data: {
+          product: {
+            _id: "1",
+            name: "",
+            description: "",
+            price: "",
+            quantity: "",
+            shipping: false,
+            category: { _id: "c1" },
+          },
+        },
+      })
+      .mockResolvedValueOnce({ data: { success: true, category: [] } });
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText("write a name")).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByPlaceholderText("write a name"), {
+      target: { value: "Test Product" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("write a description"), {
+      target: { value: "Test Description" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("write a Price"), {
+      target: { value: "100" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("write a quantity"), {
+      target: { value: "10" },
+    });
+
+    fireEvent.click(screen.getByText("UPDATE PRODUCT"));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "A photo of the product is required",
+      );
+    }); 
+  });
+
+  test("shows error toast when photo size exceeds limit on form submission", async () => {  
+    global.URL.createObjectURL = jest.fn(() => "mock-url");
+    axios.get
+      .mockResolvedValueOnce({
+        data: {
+          product: {
+            _id: "1",
+            name: "",
+            description: "",
+            price: "",
+            quantity: "",
+            shipping: false,
+            category: { _id: "c1" },
+          },
+        },
+      })
+      .mockResolvedValueOnce({ data: { success: true, category: [] } });
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByPlaceholderText("write a name")).toBeInTheDocument();
+    });
+
+    fireEvent.change(screen.getByPlaceholderText("write a name"), {
+      target: { value: "Test Product" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("write a description"), {
+      target: { value: "Test Description" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("write a Price"), {
+      target: { value: "100" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("write a quantity"), {
+      target: { value: "10" },
+    });
+
+    const file = new File([new ArrayBuffer(2_000_000)], "photo.png", {
+      type: "image/png",
+    });
+    const uploadLabel = screen.getByText("Upload Photo");
+    const input = uploadLabel
+      .closest("label")
+      .querySelector('input[type="file"]');
+
+    fireEvent.change(input, { target: { files: [file] } });
+    fireEvent.click(screen.getByText("UPDATE PRODUCT"));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        "Photo should be less than 1mb",
+      );
     });
   });
 });

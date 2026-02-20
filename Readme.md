@@ -133,3 +133,13 @@ To begin unit testing with Jest in your project, follow these steps:
      ```bash
      npm run test
      ```
+
+## 6. Task Allocation
+1. Chen Peiran
+2. Chen Zhiruo
+3. Seah Yi Xun, Ryo
+4. Sun Zihan
+5. Trinh Hoai Song Thu
+- Write unit tests for Admin Dashboard (AdminMenu.js, AdminDashboard.js)
+- Write unit tests for Admin Actions (CategoryForm.js, CreateCategory.js, CreateProduct.js, UpdateProduct.js, categoryController.js)
+- Write unit tests for Admin View Users (Users.js)
