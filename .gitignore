@@ -6,3 +6,4 @@ node_modules
 /coverage/
 .env
 *EXAMPLES.md
+/sonar-project.properties
