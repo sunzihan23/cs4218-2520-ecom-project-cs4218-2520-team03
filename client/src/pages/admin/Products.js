@@ -4,14 +4,23 @@ import Layout from "./../../components/Layout";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
+
+//Chen Zhiruo A0256855N
 const Products = () => {
   const [products, setProducts] = useState([]);
+  const [page, setPage] = useState(1);
+  const [perPage] = useState(12);
+  const [total, setTotal] = useState(0);
 
   //get all products
-  const getAllProducts = async () => {
+  const getAllProducts = async (pageToLoad = 1) => {
     try {
-      const { data } = await axios.get("/api/v1/product/get-product");
+      const { data } = await axios.get("/api/v1/product/get-product", {
+        params: { page: pageToLoad, perPage },
+      });
       setProducts(data.products);
+      setTotal(data.total);
+      setPage(data.page);
     } catch (error) {
       console.log(error.message);
       toast.error("Something Went Wrong");
@@ -20,7 +29,7 @@ const Products = () => {
 
   //lifecycle method
   useEffect(() => {
-    getAllProducts();
+    getAllProducts(1);
   }, []);
   return (
     <Layout>
@@ -50,6 +59,27 @@ const Products = () => {
                 </div>
               </Link>
             ))}
+          </div>
+          <div className="d-flex justify-content-between my-3">
+            <button
+                className="btn btn-secondary"
+                disabled={page <= 1}
+                onClick={() => getAllProducts(page - 1)}
+            >
+              Previous
+            </button>
+
+            <div>
+              Page {page} of {Math.ceil(total / perPage) || 1}
+            </div>
+
+            <button
+                className="btn btn-secondary"
+                disabled={page >= Math.ceil(total / perPage)}
+                onClick={() => getAllProducts(page + 1)}
+            >
+              Next
+            </button>
           </div>
         </div>
       </div>

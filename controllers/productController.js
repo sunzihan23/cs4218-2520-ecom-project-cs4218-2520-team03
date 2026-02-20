@@ -4,6 +4,7 @@ import categoryModel from "../models/categoryModel.js";
 import fs from "fs";
 import slugify from "slugify";
 
+//Chen Zhiruo A0256855N
 //helper to validate product info
 export function validateProductFields(fields, files, requirePhoto) {
   const { name, description, price, category, quantity, shipping } = fields || {};
@@ -78,14 +79,23 @@ export const createProductController = async (req, res) => {
 //get all products
 export const getProductController = async (req, res) => {
   try {
+    const perPage = Math.max(1, Number(req.query.perPage) || 12);
+    const page = Math.max(1, Number(req.query.page) || 1);
+
     const products = await productModel
-      .find({})
-      .populate("category")
-      .select("-photo")
-      .limit(12)
-      .sort({ createdAt: -1 });
+        .find({})
+        .populate("category")
+        .select("-photo")
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * perPage)
+        .limit(perPage);
+
+    const total = await productModel.countDocuments({});
     res.status(200).send({
       success: true,
+      page,
+      perPage,
+      total,
       countTotal: products.length,
       message: "All Products ",
       products,
