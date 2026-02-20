@@ -1,3 +1,4 @@
+// Sun Zihan, A0259581R
 import userModel from "../models/userModel.js";
 import orderModel from "../models/orderModel.js";
 
@@ -7,39 +8,35 @@ import JWT from "jsonwebtoken";
 export const registerController = async (req, res) => {
   try {
     const { name, email, password, phone, address, answer } = req.body;
-    //validations
+    
     if (!name) {
-      // Sun Zihan, A0259581R
-      // changed type from error to message 
-      return res.send({ message: "Name is required" }); 
+      return res.status(400).send({ success: false, message: "Name is required" });
     }
     if (!email) {
-      return res.send({ message: "Email is required" });
+      return res.status(400).send({ success: false, message: "Email is required" });
     }
-    if (!password) {
-      return res.send({ message: "Password is required" });
+    if (!password || password.length < 6) {
+      return res.status(400).send({ success: false, message: "Password is required and should be at least 6 characters long" });
     }
     if (!phone) {
-      return res.send({ message: "Phone number is required" });
+      return res.status(400).send({ success: false, message: "Phone number is required" });
     }
     if (!address) {
-      return res.send({ message: "Address is required" });
+      return res.status(400).send({ success: false, message: "Address is required" });
     }
     if (!answer) {
-      return res.send({ message: "Answer is required" });
+      return res.status(400).send({ success: false, message: "Answer is required" });
     }
-    //check user
+
     const exisitingUser = await userModel.findOne({ email });
-    //exisiting user
     if (exisitingUser) {
       return res.status(200).send({
         success: false,
         message: "Already registered, please login",
       });
     }
-    //register user
+
     const hashedPassword = await hashPassword(password);
-    //save
     const user = await new userModel({
       name,
       email,
@@ -51,7 +48,7 @@ export const registerController = async (req, res) => {
 
     res.status(201).send({
       success: true,
-      message: "User registered successfully",
+      message: "Registered successfully, please login", 
       user,
     });
   } catch (error) {
