@@ -97,7 +97,7 @@ const Login = () => {
                 if (errors.password) setErrors({ ...errors, password: "" });
               }}
               className={`form-control ${errors.password ? "is-invalid" : ""}`}
-              placeholder="Enter Your Password"
+              placeholder="Enter your password"
               id="passwordInput"
               required
             />
