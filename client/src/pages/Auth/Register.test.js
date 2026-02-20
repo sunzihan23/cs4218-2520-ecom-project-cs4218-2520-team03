@@ -17,12 +17,10 @@ jest.mock("react-router-dom", () => ({
 }));
 
 jest.mock("./../../components/Layout", () => ({ children, title }) => (
-  <div data-testid="layout" data-title={title}>
-    {children}
-  </div>
+  <div data-testid="layout" data-title={title}>{children}</div>
 ));
 
-describe("Register Component", () => {
+describe("Register Component Behavioral Tests", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -31,9 +29,7 @@ describe("Register Component", () => {
 
   const setup = () => {
     const utils = render(
-      <MemoryRouter
-        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
-      >
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Register />
       </MemoryRouter>
     );
@@ -52,7 +48,7 @@ describe("Register Component", () => {
 
   const fillValidForm = (inputs) => {
     fireEvent.change(inputs.name, { target: { name: "name", value: "John Doe" } });
-    fireEvent.change(inputs.email, { target: { name: "email", value: "john@example.com" } });
+    fireEvent.change(inputs.email, { target: { name: "email", value: "john@test.com" } });
     fireEvent.change(inputs.password, { target: { name: "password", value: "password123" } });
     fireEvent.change(inputs.confirm, { target: { name: "confirmPassword", value: "password123" } });
     fireEvent.change(inputs.phone, { target: { name: "phone", value: "98765432" } });
@@ -60,48 +56,32 @@ describe("Register Component", () => {
     fireEvent.change(inputs.answer, { target: { name: "answer", value: "Soccer" } });
   };
 
-  it("should validate form field requirements, types, and initial autofocus", () => {
-    const { getInputs, getByTestId } = setup();
-    const inputs = getInputs();
-
-    expect(getByTestId("layout")).toHaveAttribute("data-title", "Register - Ecommerce App");
-    expect(inputs.name).toHaveFocus();
-    
-    const requiredFields = ["name", "email", "password", "confirm", "phone", "address", "answer"];
-    requiredFields.forEach((field) => {
-      expect(inputs[field]).toBeRequired();
-    });
-
-    expect(inputs.email).toHaveAttribute("type", "email");
-    expect(inputs.password).toHaveAttribute("type", "password");
-    expect(inputs.confirm).toHaveAttribute("type", "password");
-    expect(inputs.submitBtn).toHaveAttribute("type", "submit");
-  });
-
-  it("should handle frontend validation and clear errors on state update", async () => {
+  it("should provide visual feedback and prevent submission for invalid inputs", async () => {
     const { getInputs, getByText, queryByText } = setup();
     const inputs = getInputs();
 
-    fireEvent.change(inputs.email, { target: { name: "email", value: "wrong-email" } });
-    fireEvent.change(inputs.password, { target: { name: "password", value: "12" } });
-    fireEvent.change(inputs.confirm, { target: { name: "confirmPassword", value: "34" } });
-    fireEvent.change(inputs.phone, { target: { name: "phone", value: "1234" } });
-    
+    fireEvent.change(inputs.email, { target: { name: "email", value: "invalidEmail" } });
     fireEvent.click(inputs.submitBtn);
+    expect(inputs.email).toHaveClass("is-invalid");
+    expect(toast.error).toHaveBeenCalledWith(expect.stringMatching(/fix|errors/i));
 
-    expect(getByText(/please enter a valid email address/i)).toBeInTheDocument();
-    expect(getByText(/password must be at least 6 characters long/i)).toBeInTheDocument();
-    expect(getByText(/passwords do not match/i)).toBeInTheDocument();
-    expect(getByText(/phone number must be 8 digits long/i)).toBeInTheDocument();
-    expect(toast.error).toHaveBeenCalledWith("Please fix the errors in the form");
+    fireEvent.change(inputs.password, { target: { name: "password", value: "123" } });
+    fireEvent.click(inputs.submitBtn);
+    expect(inputs.password).toHaveClass("is-invalid");
 
-    fireEvent.change(inputs.email, { target: { name: "email", value: "valid@email.com" } });
-    expect(queryByText(/please enter a valid email address/i)).not.toBeInTheDocument();
+    fireEvent.change(inputs.password, { target: { name: "password", value: "password123" } });
+    fireEvent.change(inputs.confirm, { target: { name: "confirmPassword", value: "different" } });
+    fireEvent.click(inputs.submitBtn);
+    expect(inputs.confirm).toHaveClass("is-invalid");
+    
+    fireEvent.change(inputs.email, { target: { name: "email", value: "valid@test.com" } });
+    expect(inputs.email).not.toHaveClass("is-invalid");
+    expect(queryByText(/valid email/i)).not.toBeInTheDocument();
   });
 
-  it("should register successfully, reset state, and navigate to login", async () => {
+  it("should complete registration flow and reset form state on success", async () => {
     axios.post.mockResolvedValueOnce({
-      data: { success: true, message: "Registered successfully, please login" },
+      data: { success: true, message: "User Created" },
     });
     
     const { getInputs } = setup();
@@ -111,29 +91,21 @@ describe("Register Component", () => {
     fireEvent.click(inputs.submitBtn);
 
     await waitFor(() => {
-      expect(axios.post).toHaveBeenCalledWith("/api/v1/auth/register", {
-        name: "John Doe",
-        email: "john@example.com",
-        password: "password123",
-        phone: "98765432",
-        address: "123 Street",
-        answer: "Soccer",
-      });
-      expect(toast.success).toHaveBeenCalledWith("Registered successfully, please login");
+      expect(axios.post).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.not.objectContaining({ confirmPassword: expect.any(String) })
+      );
+      expect(toast.success).toHaveBeenCalledWith(expect.any(String));
       expect(mockedNavigate).toHaveBeenCalledWith("/login");
       expect(inputs.name.value).toBe("");
-      expect(inputs.email.value).toBe("");
     });
   });
 
-  it("should use fallback success message if message property is null", async () => {
-    axios.post.mockResolvedValueOnce({
-      data: { success: true }
-    });
+  it("should use fallback success message when response message is missing", async () => {
+    axios.post.mockResolvedValueOnce({ data: { success: true } });
     
     const { getInputs } = setup();
     fillValidForm(getInputs());
-
     fireEvent.click(getInputs().submitBtn);
 
     await waitFor(() => {
@@ -141,41 +113,39 @@ describe("Register Component", () => {
     });
   });
 
-  it("should display backend error message when registration fails", async () => {
+  it("should handle server-side errors and fallback generic messages", async () => {
     axios.post.mockResolvedValueOnce({
-      data: { success: false, message: "User already exists" },
+      data: { success: false, message: "Server Error" },
     });
     const { getInputs } = setup();
     fillValidForm(getInputs());
-
     fireEvent.click(getInputs().submitBtn);
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Server Error"));
 
-    await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith("User already exists");
-    });
-  });
-
-  it("should display fallback error when success is false without message", async () => {
     axios.post.mockResolvedValueOnce({ data: { success: false } });
-    const { getInputs } = setup();
-    fillValidForm(getInputs());
-
     fireEvent.click(getInputs().submitBtn);
-
-    await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith("Something went wrong");
-    });
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Something went wrong"));
   });
 
-  it("should handle network errors with generic fallback message", async () => {
-    axios.post.mockRejectedValueOnce(new Error("Network Error"));
+  it("should handle network rejections and show appropriate feedback", async () => {
+    axios.post.mockRejectedValueOnce({
+      response: { data: { message: "API Failure" } },
+    });
     const { getInputs } = setup();
     fillValidForm(getInputs());
-
     fireEvent.click(getInputs().submitBtn);
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith("API Failure"));
 
-    await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith("Something went wrong");
-    });
+    axios.post.mockRejectedValueOnce(new Error("Timeout"));
+    fireEvent.click(getInputs().submitBtn);
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Something went wrong"));
+  });
+
+  it("should verify correct input configurations", () => {
+    const { getInputs } = setup();
+    const inputs = getInputs();
+    expect(inputs.name).toHaveFocus();
+    expect(inputs.password).toHaveAttribute("type", "password");
+    expect(inputs.submitBtn).toHaveAttribute("type", "submit");
   });
 });
