@@ -23,7 +23,6 @@ const Register = () => {
 
   const navigate = useNavigate();
 
-  // Client-side validation
   const validate = () => {
     let tempErrors = {};
     
@@ -65,12 +64,11 @@ const Register = () => {
     }
 
     try {
-      // Exclude confirmPassword from the API payload
       const { confirmPassword: _unused, ...dataToSend } = formData;
       const res = await axios.post("/api/v1/auth/register", dataToSend);
 
       if (res && res.data.success) {
-        toast.success(res.data.message || "Registered Successfully");
+        toast.success(res.data.message || "Registered successfully, please login");
         setFormData(initialState);
         navigate("/login");
       } else {
