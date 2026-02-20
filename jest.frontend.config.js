@@ -29,7 +29,8 @@ export default {
     "<rootDir>/client/src/pages/Pagenotfound.test.js",
     "<rootDir>/client/src/pages/About.test.js",
     "<rootDir>/client/src/pages/user/Dashboard.test.js",
-    "<rootDir>/client/src/context/search.test.js",],
+    "<rootDir>/client/src/context/search.test.js",
+    "<rootDir>/client/src/hooks/useCategory.test.js",],
 
   // "<rootDir>/client/src/pages/Auth/*.test.js", 
 
@@ -44,7 +45,8 @@ export default {
     "<rootDir>/client/src/pages/Pagenotfound.test.js",
     "<rootDir>/client/src/pages/About.test.js",
     "<rootDir>/client/src/pages/user/Dashboard.test.js",
-    "<rootDir>/client/src/context/search.test.js",],
+    "<rootDir>/client/src/context/search.test.js",
+    "<rootDir>/client/src/hooks/useCategory.test.js",],
   coverageThreshold: {
     global: {
       lines: 100,
