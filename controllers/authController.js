@@ -1,9 +1,8 @@
-// Sun Zihan, A0259581R
 import userModel from "../models/userModel.js";
-import orderModel from "../models/orderModel.js";
 import { comparePassword, hashPassword } from "./../helpers/authHelper.js";
 import JWT from "jsonwebtoken";
 
+// Sun Zihan, A0259581R
 export const registerController = async (req, res) => {
   try {
     const { name, email, password, phone, address, answer } = req.body;
@@ -30,17 +29,18 @@ export const registerController = async (req, res) => {
       answer,
     }).save();
 
-    res.status(201).send({
+    return res.status(201).send({
       success: true,
       message: "Registration successful, please login",
       user: { _id: user._id, name: user.name, email: user.email },
     });
   } catch (error) {
     console.error(`Register Error: ${error.message}`);
-    res.status(500).send({ success: false, message: "Internal server error during registration" });
+    return res.status(500).send({ success: false, message: "Internal server error during registration" });
   }
 };
 
+// Sun Zihan, A0259581R
 export const loginController = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -61,7 +61,7 @@ export const loginController = async (req, res) => {
 
     const token = await JWT.sign({ _id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 
-    res.status(200).send({
+    return res.status(200).send({
       success: true,
       message: "Login successful",
       user: {
@@ -76,10 +76,11 @@ export const loginController = async (req, res) => {
     });
   } catch (error) {
     console.error(`Login Error: ${error.message}`);
-    res.status(500).send({ success: false, message: "Internal server error during login" });
+    return res.status(500).send({ success: false, message: "Internal server error during login" });
   }
 };
 
+// Sun Zihan, A0259581R
 export const forgotPasswordController = async (req, res) => {
   try {
     const { email, answer, newPassword } = req.body;
@@ -96,25 +97,28 @@ export const forgotPasswordController = async (req, res) => {
     const hashed = await hashPassword(newPassword);
     await userModel.findByIdAndUpdate(user._id, { password: hashed });
 
-    res.status(200).send({
+    return res.status(200).send({
       success: true,
       message: "Password has been reset successfully",
     });
   } catch (error) {
     console.error(`Forgot Password Error: ${error.message}`);
-    res.status(500).send({ success: false, message: "Internal server error during password reset" });
+    return res.status(500).send({ success: false, message: "Internal server error during password reset" });
   }
 };
 
+// Sun Zihan, A0259581R
 export const testController = (req, res) => {
   try {
-    res.status(200).send({
+    return res.status(200).send({
       success: true,
       message: "Protected route accessed",
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).send({ success: false, message: "Server error" });
+    console.error(`Test Error: ${error.message}`);
+    if (!res.headersSent) {
+      return res.status(500).send({ success: false, message: "Server error" });
+    }
   }
 };
 

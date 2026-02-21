@@ -53,10 +53,12 @@ const ForgotPassword = () => {
         answer,
       });
       if (res && res.data.success) {
-        toast.success(res.data.message);
+        // Added fallback for success message
+        toast.success(res.data.message || "Password reset successful");
         navigate("/login");
       } else {
-        toast.error(res.data.message);
+        // Added fallback for failure message
+        toast.error(res.data.message || "Reset failed");
       }
     } catch (error) {
       const errorMsg = error.response?.data?.message || "Something went wrong";

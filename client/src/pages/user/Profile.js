@@ -15,6 +15,7 @@ const Profile = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (auth?.user) {
@@ -26,13 +27,38 @@ const Profile = () => {
     }
   }, [auth?.user]);
 
+  const validate = () => {
+    let tempErrors = {};
+    
+    if (!name.trim()) tempErrors.name = "Name is required";
+    if (!address.trim()) tempErrors.address = "Address is required";
+    
+    const phoneRegex = /^\d+$/; 
+    if (!phone) {
+      tempErrors.phone = "Phone number is required";
+    } else if (!phoneRegex.test(phone)) {
+      tempErrors.phone = "Phone number must contain only digits";
+    } else if (phone.length !== 8) {
+      tempErrors.phone = "Phone number must be 8 digits long";
+    }
+  
+    if (password) {
+      if (password.length < 6) {
+        tempErrors.password = "Password must be at least 6 characters long";
+      }
+      if (password !== confirmPassword) {
+        tempErrors.confirmPassword = "Passwords do not match";
+      }
+    }
+  
+    setErrors(tempErrors);
+    return Object.keys(tempErrors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (password && password !== confirmPassword) {
-      toast.error("Passwords do not match");
-      return;
-    }
+    if (!validate()) return;
 
     try {
       const profileData = { name, email, phone, address };
@@ -48,14 +74,11 @@ const Profile = () => {
         const updatedUser = data?.updatedUser;
         setAuth({ ...auth, user: updatedUser });
 
-        try {
-          const ls = JSON.parse(localStorage.getItem("auth"));
-          if (ls) {
-            ls.user = updatedUser;
-            localStorage.setItem("auth", JSON.stringify(ls));
-          }
-        } catch (lsError) {
-          console.error("LocalStorage update failed", lsError);
+        let ls = localStorage.getItem("auth");
+        if (ls) {
+          ls = JSON.parse(ls);
+          ls.user = updatedUser;
+          localStorage.setItem("auth", JSON.stringify(ls));
         }
 
         setPassword(""); 
@@ -77,20 +100,22 @@ const Profile = () => {
           </div>
           <div className="col-md-9">
             <div className="form-container">
-              <form onSubmit={handleSubmit}>
+              <form onSubmit={handleSubmit} noValidate>
                 <h4 className="title">USER PROFILE</h4>
                 
                 <div className="mb-3">
                   <input
                     type="text"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="form-control"
-                    id="profileName"
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      if (errors.name) setErrors({ ...errors, name: "" });
+                    }}
+                    className={`form-control ${errors.name ? "is-invalid" : ""}`}
                     placeholder="Enter your name"
                     autoFocus
-                    required
                   />
+                  {errors.name && <div className="invalid-feedback">{errors.name}</div>}
                 </div>
 
                 <div className="mb-3">
@@ -98,7 +123,6 @@ const Profile = () => {
                     type="email"
                     value={email}
                     className="form-control"
-                    id="profileEmail"
                     placeholder="Enter your email"
                     disabled
                   />
@@ -108,46 +132,56 @@ const Profile = () => {
                   <input
                     type="password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="form-control"
-                    id="profilePassword"
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      if (errors.password) setErrors({ ...errors, password: "" });
+                    }}
+                    className={`form-control ${errors.password ? "is-invalid" : ""}`}
                     placeholder="Enter your new password"
                   />
+                  {errors.password && <div className="invalid-feedback">{errors.password}</div>}
                 </div>
 
                 <div className="mb-3">
                   <input
                     type="password"
                     value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="form-control"
-                    id="profileConfirmPassword"
+                    onChange={(e) => {
+                      setConfirmPassword(e.target.value);
+                      if (errors.confirmPassword) setErrors({ ...errors, confirmPassword: "" });
+                    }}
+                    className={`form-control ${errors.confirmPassword ? "is-invalid" : ""}`}
                     placeholder="Confirm your new password"
                   />
+                  {errors.confirmPassword && <div className="invalid-feedback">{errors.confirmPassword}</div>}
                 </div>
 
                 <div className="mb-3">
                   <input
                     type="text"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="form-control"
-                    id="profilePhone"
+                    onChange={(e) => {
+                      setPhone(e.target.value);
+                      if (errors.phone) setErrors({ ...errors, phone: "" });
+                    }}
+                    className={`form-control ${errors.phone ? "is-invalid" : ""}`}
                     placeholder="Enter your phone"
-                    required
                   />
+                  {errors.phone && <div className="invalid-feedback">{errors.phone}</div>}
                 </div>
 
                 <div className="mb-3">
                   <input
                     type="text"
                     value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    className="form-control"
-                    id="profileAddress"
+                    onChange={(e) => {
+                      setAddress(e.target.value);
+                      if (errors.address) setErrors({ ...errors, address: "" });
+                    }}
+                    className={`form-control ${errors.address ? "is-invalid" : ""}`}
                     placeholder="Enter your address"
-                    required
                   />
+                  {errors.address && <div className="invalid-feedback">{errors.address}</div>}
                 </div>
 
                 <button type="submit" className="btn btn-primary">

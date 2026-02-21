@@ -20,7 +20,7 @@ jest.mock("./../../components/Layout", () => ({ children, title }) => (
   <div data-testid="layout" data-title={title}>{children}</div>
 ));
 
-describe("Register Component Behavioral Tests", () => {
+describe("Register Component", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
