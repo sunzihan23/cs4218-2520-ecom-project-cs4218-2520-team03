@@ -77,7 +77,7 @@ const Register = () => {
       const res = await axios.post("/api/v1/auth/register", dataToSend);
 
       if (res && res.data.success) {
-        toast.success(res.data.message || "Registration successful! Please login.");
+        toast.success(res.data.message || "Registration successful, please login");
         setFormData(initialState);
         navigate("/login");
       } else {

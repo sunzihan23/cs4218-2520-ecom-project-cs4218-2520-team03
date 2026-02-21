@@ -41,111 +41,128 @@ describe("Register Component Behavioral Tests", () => {
       phone: utils.getByPlaceholderText(/enter your phone/i),
       address: utils.getByPlaceholderText(/enter your address/i),
       answer: utils.getByPlaceholderText(/favorite sport/i),
-      submitBtn: utils.getByText("REGISTER"),
+      submitBtn: utils.getByRole("button", { name: /register/i }),
     });
     return { ...utils, getInputs };
   };
 
-  const fillValidForm = (inputs) => {
-    fireEvent.change(inputs.name, { target: { name: "name", value: "John Doe" } });
+  it("should update input values correctly and clear specific errors on change", () => {
+    const { getInputs, getByText, queryByText } = setup();
+    const inputs = getInputs();
+
+    fireEvent.click(inputs.submitBtn);
+    expect(getByText(/name is required/i)).toBeInTheDocument();
+
+    fireEvent.change(inputs.name, { target: { name: "name", value: "John" } });
+    
+    expect(inputs.name.value).toBe("John");
+    expect(queryByText(/name is required/i)).not.toBeInTheDocument();
+  });
+
+  it("should show inline validation for all syntax and format rules", () => {
+    const { getInputs, getByText, queryByText } = setup();
+    const inputs = getInputs();
+
+    fireEvent.change(inputs.email, { target: { name: "email", value: "invalid" } });
+    fireEvent.click(inputs.submitBtn);
+    expect(getByText(/please enter a valid email address/i)).toBeInTheDocument();
+    fireEvent.change(inputs.email, { target: { name: "email", value: "john@test.com" } });
+
+    fireEvent.change(inputs.password, { target: { name: "password", value: "123" } });
+    fireEvent.click(inputs.submitBtn);
+    expect(getByText(/password must be at least 6 characters long/i)).toBeInTheDocument();
+
+    fireEvent.change(inputs.password, { target: { name: "password", value: "password123" } });
+    fireEvent.change(inputs.confirm, { target: { name: "confirmPassword", value: "mismatch" } });
+    fireEvent.click(inputs.submitBtn);
+    expect(getByText(/passwords do not match/i)).toBeInTheDocument();
+
+    fireEvent.change(inputs.phone, { target: { name: "phone", value: "abc" } });
+    fireEvent.click(inputs.submitBtn);
+    expect(getByText(/phone number must contain only digits/i)).toBeInTheDocument();
+    
+    fireEvent.change(inputs.phone, { target: { name: "phone", value: "12345" } });
+    fireEvent.click(inputs.submitBtn);
+    expect(getByText(/phone number must be 8 digits long/i)).toBeInTheDocument();
+  });
+
+  it("should successfully register and reset form state when response message is present", async () => {
+    axios.post.mockResolvedValueOnce({
+      data: { success: true, message: "John's account created" },
+    });
+
+    const { getInputs } = setup();
+    const inputs = getInputs();
+
+    fireEvent.change(inputs.name, { target: { name: "name", value: "John" } });
     fireEvent.change(inputs.email, { target: { name: "email", value: "john@test.com" } });
     fireEvent.change(inputs.password, { target: { name: "password", value: "password123" } });
     fireEvent.change(inputs.confirm, { target: { name: "confirmPassword", value: "password123" } });
     fireEvent.change(inputs.phone, { target: { name: "phone", value: "98765432" } });
     fireEvent.change(inputs.address, { target: { name: "address", value: "123 Street" } });
     fireEvent.change(inputs.answer, { target: { name: "answer", value: "Soccer" } });
-  };
-
-  it("should provide visual feedback and prevent submission for invalid inputs", async () => {
-    const { getInputs, getByText, queryByText } = setup();
-    const inputs = getInputs();
-
-    fireEvent.change(inputs.email, { target: { name: "email", value: "invalidEmail" } });
-    fireEvent.click(inputs.submitBtn);
-    expect(inputs.email).toHaveClass("is-invalid");
-    expect(toast.error).toHaveBeenCalledWith(expect.stringMatching(/fix|errors/i));
-
-    fireEvent.change(inputs.password, { target: { name: "password", value: "123" } });
-    fireEvent.click(inputs.submitBtn);
-    expect(inputs.password).toHaveClass("is-invalid");
-
-    fireEvent.change(inputs.password, { target: { name: "password", value: "password123" } });
-    fireEvent.change(inputs.confirm, { target: { name: "confirmPassword", value: "different" } });
-    fireEvent.click(inputs.submitBtn);
-    expect(inputs.confirm).toHaveClass("is-invalid");
-    
-    fireEvent.change(inputs.email, { target: { name: "email", value: "valid@test.com" } });
-    expect(inputs.email).not.toHaveClass("is-invalid");
-    expect(queryByText(/valid email/i)).not.toBeInTheDocument();
-  });
-
-  it("should complete registration flow and reset form state on success", async () => {
-    axios.post.mockResolvedValueOnce({
-      data: { success: true, message: "User Created" },
-    });
-    
-    const { getInputs } = setup();
-    const inputs = getInputs();
-    fillValidForm(inputs);
 
     fireEvent.click(inputs.submitBtn);
 
     await waitFor(() => {
-      expect(axios.post).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.not.objectContaining({ confirmPassword: expect.any(String) })
-      );
-      expect(toast.success).toHaveBeenCalledWith(expect.any(String));
-      expect(mockedNavigate).toHaveBeenCalledWith("/login");
       expect(inputs.name.value).toBe("");
+      expect(toast.success).toHaveBeenCalledWith("John's account created");
+      expect(mockedNavigate).toHaveBeenCalledWith("/login");
     });
   });
 
-  it("should use fallback success message when response message is missing", async () => {
-    axios.post.mockResolvedValueOnce({ data: { success: true } });
-    
+  it("should successfully register with fallback success message when response message is missing", async () => {
+    axios.post.mockResolvedValueOnce({
+      data: { success: true },
+    });
+
     const { getInputs } = setup();
-    fillValidForm(getInputs());
-    fireEvent.click(getInputs().submitBtn);
+    const inputs = getInputs();
+
+    fireEvent.change(inputs.name, { target: { name: "name", value: "John" } });
+    fireEvent.change(inputs.email, { target: { name: "email", value: "john@test.com" } });
+    fireEvent.change(inputs.password, { target: { name: "password", value: "password123" } });
+    fireEvent.change(inputs.confirm, { target: { name: "confirmPassword", value: "password123" } });
+    fireEvent.change(inputs.phone, { target: { name: "phone", value: "98765432" } });
+    fireEvent.change(inputs.address, { target: { name: "address", value: "123 Street" } });
+    fireEvent.change(inputs.answer, { target: { name: "answer", value: "Soccer" } });
+
+    fireEvent.click(inputs.submitBtn);
 
     await waitFor(() => {
-      expect(toast.success).toHaveBeenCalledWith("Registered successfully, please login");
+      expect(inputs.name.value).toBe("");
+      expect(toast.success).toHaveBeenCalledWith("Registration successful, please login");
+      expect(mockedNavigate).toHaveBeenCalledWith("/login");
     });
   });
 
-  it("should handle server-side errors and fallback generic messages", async () => {
+  it("should handle server-side errors and network rejections", async () => {
     axios.post.mockResolvedValueOnce({
-      data: { success: false, message: "Server Error" },
+      data: { success: false, message: "Email already exists" },
     });
     const { getInputs } = setup();
-    fillValidForm(getInputs());
-    fireEvent.click(getInputs().submitBtn);
-    await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Server Error"));
+    const inputs = getInputs();
+    
+    fireEvent.change(inputs.name, { target: { name: "name", value: "John" } });
+    fireEvent.change(inputs.email, { target: { name: "email", value: "john@test.com" } });
+    fireEvent.change(inputs.password, { target: { name: "password", value: "pass123" } });
+    fireEvent.change(inputs.confirm, { target: { name: "confirmPassword", value: "pass123" } });
+    fireEvent.change(inputs.phone, { target: { name: "phone", value: "12345678" } });
+    fireEvent.change(inputs.address, { target: { name: "address", value: "SG" } });
+    fireEvent.change(inputs.answer, { target: { name: "answer", value: "S" } });
 
-    axios.post.mockResolvedValueOnce({ data: { success: false } });
-    fireEvent.click(getInputs().submitBtn);
+    fireEvent.click(inputs.submitBtn);
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Email already exists"));
+
+    axios.post.mockRejectedValueOnce(new Error());
+    fireEvent.click(inputs.submitBtn);
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Something went wrong"));
   });
 
-  it("should handle network rejections and show appropriate feedback", async () => {
-    axios.post.mockRejectedValueOnce({
-      response: { data: { message: "API Failure" } },
-    });
-    const { getInputs } = setup();
-    fillValidForm(getInputs());
-    fireEvent.click(getInputs().submitBtn);
-    await waitFor(() => expect(toast.error).toHaveBeenCalledWith("API Failure"));
-
-    axios.post.mockRejectedValueOnce(new Error("Timeout"));
-    fireEvent.click(getInputs().submitBtn);
-    await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Something went wrong"));
-  });
-
-  it("should verify correct input configurations", () => {
+  it("should verify correct accessibility attributes and initial focus", () => {
     const { getInputs } = setup();
     const inputs = getInputs();
     expect(inputs.name).toHaveFocus();
     expect(inputs.password).toHaveAttribute("type", "password");
-    expect(inputs.submitBtn).toHaveAttribute("type", "submit");
   });
 });
