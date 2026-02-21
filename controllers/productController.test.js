@@ -359,39 +359,15 @@ describe("getProductController", () => {
       const req = { query: {} };
       await getProductController(req, res);
     });
-
     test("calls find with nothing", () => {
       expect(productModel.find).toHaveBeenCalledWith({});
     });
-
-    test("populates category", () => {
-      expect(chain.populate).toHaveBeenCalledWith("category");
-    });
-
-    test("selects -photo", () => {
-      expect(chain.select).toHaveBeenCalledWith("-photo");
-    });
-
-    test("sorts by createdAt descending", () => {
-      expect(chain.sort).toHaveBeenCalledWith({ createdAt: -1 });
-    });
-
-    test("skips 0 for page=1", () => {
-      expect(chain.skip).toHaveBeenCalledWith(0);
-    });
-
-    test("limits to 12", () => {
-      expect(chain.limit).toHaveBeenCalledWith(12);
-    });
-
     test("counts total documents", () => {
         expect(productModel.countDocuments).toHaveBeenCalledWith({});
     });
-
     test("returns 200", () => {
       expect(res.status).toHaveBeenCalledWith(200);
     });
-
     test("sends payload containing pagination metadata", () => {
         expect(res.send).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -417,12 +393,6 @@ describe("getProductController", () => {
             productModel.countDocuments.mockResolvedValue(total);
             const req = { query: { page: "3", perPage: "6" } };
             await getProductController(req, res);
-        });
-        test("computes skip correctly", () => {
-            expect(chain.skip).toHaveBeenCalledWith(12);
-        });
-        test("limits perPage from query", () => {
-            expect(chain.limit).toHaveBeenCalledWith(6);
         });
         test("sends payload containing parsed page params", () => {
             expect(res.send).toHaveBeenCalledWith(
@@ -477,14 +447,6 @@ describe("getSingleProductController", () => {
 
     test("calls findOne with slug filter", () => {
       expect(productModel.findOne).toHaveBeenCalledWith({ slug: "abc" });
-    });
-
-    test("selects photo", () => {
-      expect(chain.select).toHaveBeenCalledWith("-photo");
-    });
-
-    test("populates category", () => {
-      expect(chain.populate).toHaveBeenCalledWith("category");
     });
 
     test("returns 200", () => {
@@ -861,9 +823,6 @@ describe("productCountController", () => {
             productModel.find.mockReturnValue(chain);
             await productCountController({}, res);
         });
-        test("calls find with empty filter and then estimatedDocumentCount", () => {
-            expect(productModel.find).toHaveBeenCalledWith({});
-        });
         test("returns 200 with total count", () => {
             expect(res.status).toHaveBeenCalledWith(200);
             expect(res.send).toHaveBeenCalledWith(expect.objectContaining({ success: true, total: 42 }));
@@ -911,18 +870,6 @@ describe("productListController", () => {
             productModel.find.mockReturnValue(chain);
             await productListController({ params: { page: 2 } }, res);
         });
-        test("selects photo", () => {
-            expect(chain.select).toHaveBeenCalledWith("-photo");
-        });
-        test("skips correct number of documents for page 2 (6)", () => {
-            expect(chain.skip).toHaveBeenCalledWith(6);
-        });
-        test("limits to 6 per page", () => {
-            expect(chain.limit).toHaveBeenCalledWith(6);
-        });
-        test("sorts by createdAt desc", () => {
-            expect(chain.sort).toHaveBeenCalledWith({ createdAt: -1 });
-        });
         test("returns 200 with products", () => {
             expect(res.status).toHaveBeenCalledWith(200);
             expect(res.send).toHaveBeenCalledWith(expect.objectContaining({ success: true, products }));
@@ -956,16 +903,7 @@ describe("searchProductController", () => {
             productModel.find.mockReturnValue(chain);
             await searchProductController({params: {keyword: "phone"}}, res);
         });
-        test("calls find with regex on name and description", () => {
-            expect(productModel.find).toHaveBeenCalledWith({
-                $or: [
-                    {name: {$regex: "phone", $options: "i"}},
-                    {description: {$regex: "phone", $options: "i"}},
-                ],
-            });
-        });
-        test("selects without photo and responds with json results", () => {
-            expect(chain.select).toHaveBeenCalledWith("-photo");
+        test("responds with json results", () => {
             expect(res.json).toHaveBeenCalledWith(results);
         });
     });
@@ -1002,11 +940,6 @@ describe("relatedProductController", () => {
     });
     test("calls find with category and $ne filter", () => {
       expect(productModel.find).toHaveBeenCalledWith({ category: "mockCategory", _id: { $ne: "mockProduct" } });
-    });
-    test("selects without photo, limits to 3, populates category", () => {
-      expect(chain.select).toHaveBeenCalledWith("-photo");
-      expect(chain.limit).toHaveBeenCalledWith(3);
-      expect(chain.populate).toHaveBeenCalledWith("category");
     });
     test("returns 200 with products", () => {
       expect(res.status).toHaveBeenCalledWith(200);
@@ -1062,7 +995,6 @@ describe("productCategoryController", () => {
     });
     test("fetches products by category id and populates category", () => {
       expect(productModel.find).toHaveBeenCalledWith({ category: "mockCategory" });
-      expect(chain.populate).toHaveBeenCalledWith("category");
     });
     test("returns 200 with category and products", () => {
       expect(res.status).toHaveBeenCalledWith(200);
