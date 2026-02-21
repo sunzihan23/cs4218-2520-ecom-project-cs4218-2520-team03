@@ -84,7 +84,7 @@ describe("Cart Context", () => {
 
       // Assert - value is [cart, setCart]; consumer can read cart length
       expect(screen.getByTestId("cart-length")).toHaveTextContent("0");
-      expect(screen.getByTestId("cart-json")).toHaveTextContent("[]");
+      expect(JSON.parse(screen.getByTestId("cart-json").textContent)).toEqual([]);
     });
 
     it("should return current cart state", () => {
@@ -99,7 +99,7 @@ describe("Cart Context", () => {
       );
 
       // Assert
-      expect(screen.getByTestId("cart-json")).toHaveTextContent("[]");
+      expect(JSON.parse(screen.getByTestId("cart-json").textContent)).toEqual([]);
     });
   });
 
@@ -117,7 +117,7 @@ describe("Cart Context", () => {
 
       // Assert
       expect(screen.getByTestId("cart-length")).toHaveTextContent("0");
-      expect(screen.getByTestId("cart-json")).toHaveTextContent("[]");
+      expect(JSON.parse(screen.getByTestId("cart-json").textContent)).toEqual([]);
     });
 
     it("should have empty cart when localStorage getItem returns null", () => {
@@ -132,7 +132,7 @@ describe("Cart Context", () => {
       );
 
       // Assert
-      expect(screen.getByTestId("cart-json")).toHaveTextContent("[]");
+      expect(JSON.parse(screen.getByTestId("cart-json").textContent)).toEqual([]);
     });
   });
 
@@ -153,7 +153,7 @@ describe("Cart Context", () => {
       await waitFor(() => {
         expect(screen.getByTestId("cart-length")).toHaveTextContent("1");
       });
-      expect(screen.getByTestId("cart-json")).toHaveTextContent(JSON.stringify(storedCart));
+      expect(JSON.parse(screen.getByTestId("cart-json").textContent)).toEqual(storedCart);
       expect(getItemMock).toHaveBeenCalledWith("cart");
     });
 
@@ -170,7 +170,7 @@ describe("Cart Context", () => {
 
       // Assert
       await waitFor(() => {
-        expect(screen.getByTestId("cart-json")).toHaveTextContent("[]");
+        expect(JSON.parse(screen.getByTestId("cart-json").textContent)).toEqual([]);
       });
     });
   });
@@ -193,9 +193,9 @@ describe("Cart Context", () => {
       await waitFor(() => {
         expect(screen.getByTestId("cart-length")).toHaveTextContent("1");
       });
-      expect(screen.getByTestId("cart-json")).toHaveTextContent(
-        JSON.stringify([{ _id: "1", name: "Product 1", price: 10 }])
-      );
+      expect(JSON.parse(screen.getByTestId("cart-json").textContent)).toEqual([
+        { _id: "1", name: "Product 1", price: 10 },
+      ]);
     });
   });
 });
