@@ -81,7 +81,7 @@ const Login = () => {
                 if (errors.email) setErrors({ ...errors, email: "" });
               }}
               className={`form-control ${errors.email ? "is-invalid" : ""}`}
-              placeholder="Enter Your Email"
+              placeholder="Enter your email"
               id="emailInput"
               required
             />

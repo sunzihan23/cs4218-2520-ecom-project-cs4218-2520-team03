@@ -11,7 +11,7 @@ const Register = () => {
     name: "",
     email: "",
     password: "",
-    confirmPassword: "", 
+    confirmPassword: "",
     phone: "",
     address: "",
     answer: "",
@@ -25,13 +25,21 @@ const Register = () => {
 
   const validate = () => {
     let tempErrors = {};
-    
+
+    if (!name.trim()) tempErrors.name = "Name is required";
+    if (!address.trim()) tempErrors.address = "Address is required";
+    if (!answer.trim()) tempErrors.answer = "Answer is required";
+
     const emailRegex = /^\S+@\S+\.\S+$/;
-    if (!emailRegex.test(email)) {
-      tempErrors.email = "Please enter a valid email address";
+    if (!email) {
+      tempErrors.email = "Email is required";
+    } else if (!emailRegex.test(email)) {
+      tempErrors.email = "Please enter a valid email address (eg. name@example.com)";
     }
 
-    if (password.length < 6) {
+    if (!password) {
+      tempErrors.password = "Password is required";
+    } else if (password.length < 6) {
       tempErrors.password = "Password must be at least 6 characters long";
     }
 
@@ -39,8 +47,12 @@ const Register = () => {
       tempErrors.confirmPassword = "Passwords do not match";
     }
 
-    const phoneRegex = /^\d{8}$/;
-    if (!phoneRegex.test(phone)) {
+    const phoneRegex = /^\d+$/; 
+    if (!phone) {
+      tempErrors.phone = "Phone number is required";
+    } else if (!phoneRegex.test(phone)) {
+      tempErrors.phone = "Phone number must contain only digits";
+    } else if (phone.length !== 8) {
       tempErrors.phone = "Phone number must be 8 digits long";
     }
 
@@ -57,22 +69,19 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!validate()) {
-      toast.error("Please fix the errors in the form");
-      return;
-    }
+
+    if (!validate()) return;
 
     try {
       const { confirmPassword: _unused, ...dataToSend } = formData;
       const res = await axios.post("/api/v1/auth/register", dataToSend);
 
       if (res && res.data.success) {
-        toast.success(res.data.message || "Registered successfully, please login");
+        toast.success(res.data.message || "Registration successful, please login");
         setFormData(initialState);
         navigate("/login");
       } else {
-        toast.error(res.data.message || "Something went wrong");
+        toast.error(res.data.message);
       }
     } catch (error) {
       const errorMsg = error.response?.data?.message || "Something went wrong";
@@ -85,37 +94,40 @@ const Register = () => {
       <div className="form-container" style={{ minHeight: "90vh" }}>
         <form onSubmit={handleSubmit} noValidate>
           <h4 className="title">REGISTER FORM</h4>
-          
+
           <div className="mb-3">
-            <input type="text" name="name" value={name} onChange={handleChange} className="form-control" id="name" placeholder="Enter your name" required autoFocus />
+            <input type="text" name="name" value={name} onChange={handleChange} className={`form-control ${errors.name ? "is-invalid" : ""}`} placeholder="Enter your name" autoFocus />
+            {errors.name && <div className="invalid-feedback">{errors.name}</div>}
           </div>
 
           <div className="mb-3">
-            <input type="email" name="email" value={email} onChange={handleChange} className={`form-control ${errors.email ? "is-invalid" : ""}`} id="email" placeholder="Enter your email" required />
+            <input type="email" name="email" value={email} onChange={handleChange} className={`form-control ${errors.email ? "is-invalid" : ""}`} placeholder="Enter your email" />
             {errors.email && <div className="invalid-feedback">{errors.email}</div>}
           </div>
 
           <div className="mb-3">
-            <input type="password" name="password" value={password} onChange={handleChange} className={`form-control ${errors.password ? "is-invalid" : ""}`} id="password" placeholder="Enter your password" required />
+            <input type="password" name="password" value={password} onChange={handleChange} className={`form-control ${errors.password ? "is-invalid" : ""}`} placeholder="Enter your password" />
             {errors.password && <div className="invalid-feedback">{errors.password}</div>}
           </div>
 
           <div className="mb-3">
-            <input type="password" name="confirmPassword" value={confirmPassword} onChange={handleChange} className={`form-control ${errors.confirmPassword ? "is-invalid" : ""}`} id="confirmPassword" placeholder="Confirm your password" required />
+            <input type="password" name="confirmPassword" value={confirmPassword} onChange={handleChange} className={`form-control ${errors.confirmPassword ? "is-invalid" : ""}`} placeholder="Confirm your password" />
             {errors.confirmPassword && <div className="invalid-feedback">{errors.confirmPassword}</div>}
           </div>
 
           <div className="mb-3">
-            <input type="text" name="phone" value={phone} onChange={handleChange} className={`form-control ${errors.phone ? "is-invalid" : ""}`} id="phone" placeholder="Enter your phone" required />
+            <input type="text" name="phone" value={phone} onChange={handleChange} className={`form-control ${errors.phone ? "is-invalid" : ""}`} placeholder="Enter your phone" />
             {errors.phone && <div className="invalid-feedback">{errors.phone}</div>}
           </div>
 
           <div className="mb-3">
-            <input type="text" name="address" value={address} onChange={handleChange} className="form-control" id="address" placeholder="Enter your address" required />
+            <input type="text" name="address" value={address} onChange={handleChange} className={`form-control ${errors.address ? "is-invalid" : ""}`} placeholder="Enter your address" />
+            {errors.address && <div className="invalid-feedback">{errors.address}</div>}
           </div>
 
           <div className="mb-3">
-            <input type="text" name="answer" value={answer} onChange={handleChange} className="form-control" id="answer" placeholder="What is your favorite sport?" required />
+            <input type="text" name="answer" value={answer} onChange={handleChange} className={`form-control ${errors.answer ? "is-invalid" : ""}`} placeholder="Enter your favorite sport" />
+            {errors.answer && <div className="invalid-feedback">{errors.answer}</div>}
           </div>
 
           <button type="submit" className="btn btn-primary">REGISTER</button>
