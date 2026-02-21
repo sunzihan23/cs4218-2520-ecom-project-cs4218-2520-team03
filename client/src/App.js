@@ -23,6 +23,9 @@ import Categories from "./pages/Categories";
 import CategoryProduct from "./pages/CategoryProduct";
 import CartPage from "./pages/CartPage";
 import AdminOrders from "./pages/admin/AdminOrders";
+// Sun Zihan, A0259581R
+// add implementation for ForgotPassword page
+import ForgotPassword from "./pages/Auth/ForgotPassword"; 
 function App() {
   return (
     <>
@@ -49,6 +52,7 @@ function App() {
         </Route>
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/policy" element={<Policy />} />
