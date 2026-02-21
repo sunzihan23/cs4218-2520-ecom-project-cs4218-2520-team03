@@ -138,6 +138,10 @@ To begin unit testing with Jest in your project, follow these steps:
 1. Chen Peiran
 2. Chen Zhiruo
 3. Seah Yi Xun, Ryo
+- Write unit tests for auth controller (updateProfileController, getOrdersController, getAllOrdersController, orderStatusController in authController.js / authController.test.js)
+- Write unit tests for order model (orderModel.js)
+- Contribute to cart context and CartPage (context/cart.js, pages/CartPage.js and tests)
+- Write unit tests for user Orders page (pages/user/Orders.js)
 4. Sun Zihan
 5. Trinh Hoai Song Thu
 - Write unit tests for Admin Dashboard (AdminMenu.js, AdminDashboard.js)

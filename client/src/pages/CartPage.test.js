@@ -1,5 +1,5 @@
 import { totalPrice } from "./CartPage";
-
+//Seah Yi Xun Ryo A0252602R, tests for CartPage.js
 //Parse numeric value from USD-style string ("$1,234.50" -> 1234.5). , dont use exact string matching
 const parseUsdNumeric = (str) => parseFloat(String(str).replace(/[$,]/g, "")) || 0;
 
