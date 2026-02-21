@@ -61,18 +61,37 @@ describe("ForgotPassword Component Behavioral Tests", () => {
     expect(fields.confirm.value).toBe("newpass123");
   });
 
-  it("should prevent submission and show error if passwords do not match", async () => {
-    const { getFields } = setup();
+  it("should show and clear all inline validation errors", () => {
+    const { getFields, getByText, queryByText } = setup();
     const fields = getFields();
 
-    fireEvent.change(fields.email, { target: { value: "test@test.com" } });
-    fireEvent.change(fields.answer, { target: { value: "sport" } });
-    fireEvent.change(fields.password, { target: { value: "pass123" } });
-    fireEvent.change(fields.confirm, { target: { value: "pass456" } });
     fireEvent.click(fields.submitBtn);
+    expect(getByText(/email is required/i)).toBeInTheDocument();
+    expect(getByText(/answer is required/i)).toBeInTheDocument();
+    expect(getByText(/new password is required/i)).toBeInTheDocument();
 
-    expect(toast.error).toHaveBeenCalledWith("Passwords do not match");
-    expect(axios.post).not.toHaveBeenCalled();
+    fireEvent.change(fields.email, { target: { value: "invalid-email" } });
+    expect(queryByText(/email is required/i)).not.toBeInTheDocument();
+    
+    fireEvent.click(fields.submitBtn);
+    expect(getByText(/please enter a valid email address/i)).toBeInTheDocument();
+
+    fireEvent.change(fields.answer, { target: { value: "Soccer" } });
+    expect(queryByText(/answer is required/i)).not.toBeInTheDocument();
+
+    fireEvent.change(fields.password, { target: { value: "123" } });
+    expect(queryByText(/new password is required/i)).not.toBeInTheDocument();
+    
+    fireEvent.click(fields.submitBtn);
+    expect(getByText(/password must be at least 6 characters long/i)).toBeInTheDocument();
+
+    fireEvent.change(fields.password, { target: { value: "password123" } });
+    fireEvent.change(fields.confirm, { target: { value: "mismatch" } });
+    fireEvent.click(fields.submitBtn);
+    expect(getByText(/passwords do not match/i)).toBeInTheDocument();
+
+    fireEvent.change(fields.confirm, { target: { value: "password123" } });
+    expect(queryByText(/passwords do not match/i)).not.toBeInTheDocument();
   });
 
   it("should successfully reset password and navigate to login on success", async () => {
@@ -100,9 +119,9 @@ describe("ForgotPassword Component Behavioral Tests", () => {
     });
   });
 
-  it("should handle server-side failure messages correctly", async () => {
+  it("should handle server-side failure via toast", async () => {
     axios.post.mockResolvedValueOnce({
-      data: { success: false, message: "Invalid answer" },
+      data: { success: false, message: "Incorrect email or security answer" },
     });
 
     const { getFields } = setup();
@@ -110,12 +129,12 @@ describe("ForgotPassword Component Behavioral Tests", () => {
 
     fireEvent.change(fields.email, { target: { value: "test@test.com" } });
     fireEvent.change(fields.answer, { target: { value: "wrong" } });
-    fireEvent.change(fields.password, { target: { value: "pass" } });
-    fireEvent.change(fields.confirm, { target: { value: "pass" } });
+    fireEvent.change(fields.password, { target: { value: "pass1234" } });
+    fireEvent.change(fields.confirm, { target: { value: "pass1234" } });
     fireEvent.click(fields.submitBtn);
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith("Invalid answer");
+      expect(toast.error).toHaveBeenCalledWith("Incorrect email or security answer");
     });
   });
 
@@ -129,8 +148,8 @@ describe("ForgotPassword Component Behavioral Tests", () => {
 
     fireEvent.change(fields.email, { target: { value: "test@test.com" } });
     fireEvent.change(fields.answer, { target: { value: "sport" } });
-    fireEvent.change(fields.password, { target: { value: "pass" } });
-    fireEvent.change(fields.confirm, { target: { value: "pass" } });
+    fireEvent.change(fields.password, { target: { value: "pass1234" } });
+    fireEvent.change(fields.confirm, { target: { value: "pass1234" } });
     fireEvent.click(fields.submitBtn);
 
     await waitFor(() => {
