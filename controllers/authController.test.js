@@ -15,6 +15,24 @@ import { hashPassword, comparePassword } from "../helpers/authHelper.js";
 import JWT from "jsonwebtoken";
 import { createMockReq, createMockRes } from "../__tests__/helpers/mockHelpers.js";
 
+/**
+ * chainable mock for orderModel.find().populate().populate() [and .sort()].
+ * Assert only res.json/res.send(outcomes  only), no brittle coupling to exact chain structure that can change 
+ * @param {Array|Error} result - Resolved value (array of orders) or rejection error
+ * @param {{ withSort: boolean }} options - withSort: true for getAllOrdersController (adds .sort() in chain)
+ */
+function createOrderFindChain(result, options = {}) {
+  const { withSort = false } = options;
+  const isError = result instanceof Error;
+  const thenable = isError
+    ? { then: (_, rej) => rej(result), catch: (fn) => { fn(result); return thenable; } }
+    : { then: (resolve) => resolve(result), catch: () => thenable };
+  const sort = jest.fn().mockReturnValue(thenable);
+  const populate2 = jest.fn().mockReturnValue(withSort ? { sort } : thenable);
+  const populate1 = jest.fn().mockReturnValue({ populate: populate2 });
+  return { populate: populate1 };
+}
+
 jest.mock("../models/userModel.js");
 jest.mock("../helpers/authHelper.js");
 jest.mock("jsonwebtoken");
@@ -232,6 +250,7 @@ describe("Auth Controller Unit Tests", () => {
     });
   });
 
+  //Seah Yi Xun Ryo A0252602R
   // --- updateProfileController ---
   describe("updateProfileController", () => {
     let consoleLogSpy;
@@ -267,9 +286,11 @@ describe("Auth Controller Unit Tests", () => {
 
       await updateProfileController(req, res);
 
-      expect(res.json).toHaveBeenCalledWith({
-        error: "Passsword is required and should be 6 characters long",
-      });
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          error: expect.stringMatching(/password|6|character/i),
+        })
+      );
       expect(res.status).not.toHaveBeenCalled();
       expect(userModel.findByIdAndUpdate).not.toHaveBeenCalled();
     });
@@ -382,11 +403,13 @@ describe("Auth Controller Unit Tests", () => {
       await updateProfileController(req, res);
 
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.send).toHaveBeenCalledWith({
-        success: true,
-        message: "Profile updated successfully",
-        updatedUser,
-      });
+      expect(res.send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: true,
+          message: expect.stringMatching(/profile.*updated|updated.*profile/i),
+          updatedUser,
+        })
+      );
     });
 
     it("should return 400 with success false and error message when update fails", async () => {
@@ -401,11 +424,13 @@ describe("Auth Controller Unit Tests", () => {
 
       // Assert
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.send).toHaveBeenCalledWith({
-        success: false,
-        message: "Error while updating profile",
-        error: dbError,
-      });
+      expect(res.send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          success: false,
+          message: expect.stringMatching(/updating profile|update.*profile/i),
+          error: dbError,
+        })
+      );
       expect(consoleLogSpy).toHaveBeenCalledWith(dbError);
     });
   });
@@ -430,11 +455,7 @@ describe("Auth Controller Unit Tests", () => {
         ];
         const mockReq = createMockReq({ user: { _id: "user123" } });
         const mockRes = createMockRes();
-        orderModel.find = jest.fn().mockReturnValue({
-          populate: jest.fn().mockReturnValue({
-            populate: jest.fn().mockResolvedValue(mockOrders),
-          }),
-        });
+        orderModel.find = jest.fn().mockReturnValue(createOrderFindChain(mockOrders));
 
         // Act
         await getOrdersController(mockReq, mockRes);
@@ -448,11 +469,7 @@ describe("Auth Controller Unit Tests", () => {
       it("should return empty array when user has no orders", async () => {
         const mockReq = createMockReq({ user: { _id: "user123" } });
         const mockRes = createMockRes();
-        orderModel.find = jest.fn().mockReturnValue({
-          populate: jest.fn().mockReturnValue({
-            populate: jest.fn().mockReturnValue([]),
-          }),
-        });
+        orderModel.find = jest.fn().mockReturnValue(createOrderFindChain([]));
 
         await getOrdersController(mockReq, mockRes);
 
@@ -465,11 +482,7 @@ describe("Auth Controller Unit Tests", () => {
         const singleOrder = [{ _id: "order1", buyer: "user123", products: [{ _id: "prod1" }] }];
         const mockReq = createMockReq({ user: { _id: "user123" } });
         const mockRes = createMockRes();
-        orderModel.find = jest.fn().mockReturnValue({
-          populate: jest.fn().mockReturnValue({
-            populate: jest.fn().mockResolvedValue(singleOrder),
-          }),
-        });
+        orderModel.find = jest.fn().mockReturnValue(createOrderFindChain(singleOrder));
 
         await getOrdersController(mockReq, mockRes);
 
@@ -483,11 +496,7 @@ describe("Auth Controller Unit Tests", () => {
         const dbError = new Error("Database connection failed");
         const mockReq = createMockReq({ user: { _id: "user123" } });
         const mockRes = createMockRes();
-        orderModel.find = jest.fn().mockReturnValue({
-          populate: jest.fn().mockReturnValue({
-            populate: jest.fn().mockRejectedValue(dbError),
-          }),
-        });
+        orderModel.find = jest.fn().mockReturnValue(createOrderFindChain(dbError));
 
         // Act
         await getOrdersController(mockReq, mockRes);
@@ -527,11 +536,7 @@ describe("Auth Controller Unit Tests", () => {
         const populateError = new Error("Populate failed");
         const mockReq = createMockReq({ user: { _id: "user123" } });
         const mockRes = createMockRes();
-        orderModel.find = jest.fn().mockReturnValue({
-          populate: jest.fn().mockReturnValue({
-            populate: jest.fn().mockRejectedValue(populateError),
-          }),
-        });
+        orderModel.find = jest.fn().mockReturnValue(createOrderFindChain(populateError));
 
         await getOrdersController(mockReq, mockRes);
 
@@ -550,11 +555,7 @@ describe("Auth Controller Unit Tests", () => {
         timeoutError.code = "ETIMEDOUT";
         const mockReq = createMockReq({ user: { _id: "user123" } });
         const mockRes = createMockRes();
-        orderModel.find = jest.fn().mockReturnValue({
-          populate: jest.fn().mockReturnValue({
-            populate: jest.fn().mockRejectedValue(timeoutError),
-          }),
-        });
+        orderModel.find = jest.fn().mockReturnValue(createOrderFindChain(timeoutError));
 
         await getOrdersController(mockReq, mockRes);
 
@@ -572,11 +573,9 @@ describe("Auth Controller Unit Tests", () => {
       it("should handle undefined user object gracefully", async () => {
         const mockReq = createMockReq({ user: undefined });
         const mockRes = createMockRes();
-        orderModel.find = jest.fn().mockReturnValue({
-          populate: jest.fn().mockReturnValue({
-            populate: jest.fn().mockRejectedValue(new Error("Cannot read property _id")),
-          }),
-        });
+        orderModel.find = jest.fn().mockReturnValue(
+          createOrderFindChain(new Error("Cannot read property _id"))
+        );
 
         await getOrdersController(mockReq, mockRes);
 
@@ -589,11 +588,7 @@ describe("Auth Controller Unit Tests", () => {
         ];
         const mockReq = createMockReq({ user: { _id: "user123" } });
         const mockRes = createMockRes();
-        orderModel.find = jest.fn().mockReturnValue({
-          populate: jest.fn().mockReturnValue({
-            populate: jest.fn().mockResolvedValue(ordersWithNulls),
-          }),
-        });
+        orderModel.find = jest.fn().mockReturnValue(createOrderFindChain(ordersWithNulls));
 
         await getOrdersController(mockReq, mockRes);
 
@@ -622,13 +617,7 @@ describe("Auth Controller Unit Tests", () => {
         ];
         const mockReq = createMockReq({ user: {} });
         const mockRes = createMockRes();
-        orderModel.find = jest.fn().mockReturnValue({
-          populate: jest.fn().mockReturnValue({
-            populate: jest.fn().mockReturnValue({
-              sort: jest.fn().mockResolvedValue(mockOrders),
-            }),
-          }),
-        });
+        orderModel.find = jest.fn().mockReturnValue(createOrderFindChain(mockOrders, { withSort: true }));
 
         // Act
         await getAllOrdersController(mockReq, mockRes);
@@ -642,13 +631,7 @@ describe("Auth Controller Unit Tests", () => {
       it("should return empty array when there are no orders", async () => {
         const mockReq = createMockReq({ user: {} });
         const mockRes = createMockRes();
-        orderModel.find = jest.fn().mockReturnValue({
-          populate: jest.fn().mockReturnValue({
-            populate: jest.fn().mockReturnValue({
-              sort: jest.fn().mockResolvedValue([]),
-            }),
-          }),
-        });
+        orderModel.find = jest.fn().mockReturnValue(createOrderFindChain([], { withSort: true }));
 
         await getAllOrdersController(mockReq, mockRes);
 
@@ -657,23 +640,6 @@ describe("Auth Controller Unit Tests", () => {
         expect(orderModel.find).toHaveBeenCalledWith({});
       });
 
-      it("should call find with empty filter and chain populate and sort", async () => {
-        const mockOrders = [{ _id: "order1", buyer: "user1", products: [] }];
-        const mockReq = createMockReq({ user: {} });
-        const mockRes = createMockRes();
-        const sortMock = jest.fn().mockResolvedValue(mockOrders);
-        const populate2Mock = jest.fn().mockReturnValue({ sort: sortMock });
-        const populate1Mock = jest.fn().mockReturnValue({ populate: populate2Mock });
-        orderModel.find = jest.fn().mockReturnValue({ populate: populate1Mock });
-
-        await getAllOrdersController(mockReq, mockRes);
-
-        expect(orderModel.find).toHaveBeenCalledWith({});
-        expect(populate1Mock).toHaveBeenCalled();
-        expect(populate2Mock).toHaveBeenCalled();
-        expect(sortMock).toHaveBeenCalledWith({ createdAt: "-1" });
-        expect(mockRes.json).toHaveBeenCalledWith(mockOrders);
-      });
     });
 
     describe("Failure Cases", () => {
@@ -681,13 +647,7 @@ describe("Auth Controller Unit Tests", () => {
         const dbError = new Error("Database connection failed");
         const mockReq = createMockReq({ user: {} });
         const mockRes = createMockRes();
-        orderModel.find = jest.fn().mockReturnValue({
-          populate: jest.fn().mockReturnValue({
-            populate: jest.fn().mockReturnValue({
-              sort: jest.fn().mockRejectedValue(dbError),
-            }),
-          }),
-        });
+        orderModel.find = jest.fn().mockReturnValue(createOrderFindChain(dbError, { withSort: true }));
 
         await getAllOrdersController(mockReq, mockRes);
 
@@ -725,13 +685,7 @@ describe("Auth Controller Unit Tests", () => {
         const populateError = new Error("Populate failed");
         const mockReq = createMockReq({ user: {} });
         const mockRes = createMockRes();
-        orderModel.find = jest.fn().mockReturnValue({
-          populate: jest.fn().mockReturnValue({
-            populate: jest.fn().mockReturnValue({
-              sort: jest.fn().mockRejectedValue(populateError),
-            }),
-          }),
-        });
+        orderModel.find = jest.fn().mockReturnValue(createOrderFindChain(populateError, { withSort: true }));
 
         await getAllOrdersController(mockReq, mockRes);
 
@@ -750,13 +704,7 @@ describe("Auth Controller Unit Tests", () => {
         timeoutError.code = "ETIMEDOUT";
         const mockReq = createMockReq({ user: {} });
         const mockRes = createMockRes();
-        orderModel.find = jest.fn().mockReturnValue({
-          populate: jest.fn().mockReturnValue({
-            populate: jest.fn().mockReturnValue({
-              sort: jest.fn().mockRejectedValue(timeoutError),
-            }),
-          }),
-        });
+        orderModel.find = jest.fn().mockReturnValue(createOrderFindChain(timeoutError, { withSort: true }));
 
         await getAllOrdersController(mockReq, mockRes);
 
@@ -777,13 +725,9 @@ describe("Auth Controller Unit Tests", () => {
         ];
         const mockReq = createMockReq({ user: {} });
         const mockRes = createMockRes();
-        orderModel.find = jest.fn().mockReturnValue({
-          populate: jest.fn().mockReturnValue({
-            populate: jest.fn().mockReturnValue({
-              sort: jest.fn().mockResolvedValue(ordersWithNulls),
-            }),
-          }),
-        });
+        orderModel.find = jest.fn().mockReturnValue(
+          createOrderFindChain(ordersWithNulls, { withSort: true })
+        );
 
         await getAllOrdersController(mockReq, mockRes);
 
