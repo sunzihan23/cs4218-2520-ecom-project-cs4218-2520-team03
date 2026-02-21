@@ -15,6 +15,7 @@ import { hashPassword, comparePassword } from "../helpers/authHelper.js";
 import JWT from "jsonwebtoken";
 import { createMockReq, createMockRes } from "../__tests__/helpers/mockHelpers.js";
 
+//Seah Yi Xun Ryo A0252602R, helper for orderModel.find().populate().populate() [and .sort()]
 /**
  * chainable mock for orderModel.find().populate().populate() [and .sort()].
  * Assert only res.json/res.send(outcomes  only), no brittle coupling to exact chain structure that can change 
