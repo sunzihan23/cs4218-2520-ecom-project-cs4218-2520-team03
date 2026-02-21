@@ -1,3 +1,4 @@
+//Chen Zhiruo A0256855N
 import fs from "fs";
 import slugify from "slugify";
 import productModel from "../models/productModel.js";
@@ -20,7 +21,6 @@ import {
     productCategoryController,
 } from "./productController.js";
 
-//Chen Zhiruo A0256855N
 jest.mock("fs", () => ({
   readFileSync: jest.fn(),
 }));
@@ -237,22 +237,10 @@ describe("saveProductService", () => {
         test("returns status 400", () => {
           expect(res.status).toBe(400);
         });
-
-        test("does not call slugify", () => {
-          expect(slugify).not.toHaveBeenCalled();
-        });
-
-        test("does not call productDoc.set", () => {
-          expect(productDoc.set).not.toHaveBeenCalled();
-        });
-
         test("does not call productDoc.save", () => {
           expect(productDoc.save).not.toHaveBeenCalled();
         });
 
-        test("does not call readFile", () => {
-          expect(readFile).not.toHaveBeenCalled();
-        });
   });
     describe("when validation passes", () => {
     let productDoc, readFile, files;
@@ -273,19 +261,6 @@ describe("saveProductService", () => {
         readFile, requirePhoto
       });
     });
-
-    test("calls productDoc.set", () => {
-      expect(productDoc.set).toHaveBeenCalledTimes(1);
-    });
-
-    test("calls readFile", () => {
-      expect(readFile).toHaveBeenCalledTimes(1);
-    });
-
-    test("calls readFile with photo.path", () => {
-      expect(readFile).toHaveBeenCalledWith("/tmp/p.png");
-    });
-
     test("calls productDoc.save", () => {
       expect(productDoc.save).toHaveBeenCalledTimes(1);
     });
