@@ -244,6 +244,7 @@ describe("Auth Controller Unit Tests", () => {
     });
 
     it("should fetch current user with userModel.findById(req.user._id)", async () => {
+      // Arrange
       const userId = "user123";
       const existingUser = { _id: userId, name: "Old", password: "oldHash", phone: "1", address: "addr" };
       req.user = { _id: userId };
@@ -251,8 +252,10 @@ describe("Auth Controller Unit Tests", () => {
       userModel.findById = jest.fn().mockResolvedValue(existingUser);
       userModel.findByIdAndUpdate = jest.fn().mockResolvedValue({ ...existingUser, name: "NewName" });
 
+      // Act
       await updateProfileController(req, res);
 
+      // Assert
       expect(userModel.findById).toHaveBeenCalledWith(userId);
     });
 
@@ -387,13 +390,16 @@ describe("Auth Controller Unit Tests", () => {
     });
 
     it("should return 400 with success false and error message when update fails", async () => {
+      // Arrange
       req.user = { _id: "u1" };
       req.body = {};
       const dbError = new Error("Database error");
       userModel.findById = jest.fn().mockRejectedValue(dbError);
 
+      // Act
       await updateProfileController(req, res);
 
+      // Assert
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.send).toHaveBeenCalledWith({
         success: false,
@@ -417,6 +423,7 @@ describe("Auth Controller Unit Tests", () => {
 
     describe("Success Cases", () => {
       it("should return orders for authenticated user as JSON array", async () => {
+        // Arrange
         const mockOrders = [
           { _id: "order1", buyer: "user123", products: [{ _id: "prod1", name: "Product 1" }], status: "Processing" },
           { _id: "order2", buyer: "user123", products: [{ _id: "prod2", name: "Product 2" }], status: "Shipped" },
@@ -429,8 +436,10 @@ describe("Auth Controller Unit Tests", () => {
           }),
         });
 
+        // Act
         await getOrdersController(mockReq, mockRes);
 
+        // Assert
         expect(mockRes.json).toHaveBeenCalledWith(mockOrders);
         expect(mockRes.json).toHaveBeenCalledTimes(1);
         expect(orderModel.find).toHaveBeenCalled();
@@ -470,6 +479,7 @@ describe("Auth Controller Unit Tests", () => {
 
     describe("Failure Cases", () => {
       it("should return 500 error when database query fails", async () => {
+        // Arrange
         const dbError = new Error("Database connection failed");
         const mockReq = createMockReq({ user: { _id: "user123" } });
         const mockRes = createMockRes();
@@ -479,8 +489,10 @@ describe("Auth Controller Unit Tests", () => {
           }),
         });
 
+        // Act
         await getOrdersController(mockReq, mockRes);
 
+        // Assert
         expect(mockRes.status).toHaveBeenCalledWith(500);
         expect(mockRes.send).toHaveBeenCalledWith(
           expect.objectContaining({
@@ -603,6 +615,7 @@ describe("Auth Controller Unit Tests", () => {
 
     describe("Success Cases", () => {
       it("should return all orders as JSON array", async () => {
+        // Arrange
         const mockOrders = [
           { _id: "order1", buyer: "user1", products: [{ _id: "prod1" }], status: "Processing", createdAt: "2024-01-01" },
           { _id: "order2", buyer: "user2", products: [{ _id: "prod2" }], status: "Shipped", createdAt: "2024-01-02" },
@@ -617,8 +630,10 @@ describe("Auth Controller Unit Tests", () => {
           }),
         });
 
+        // Act
         await getAllOrdersController(mockReq, mockRes);
 
+        // Assert
         expect(mockRes.json).toHaveBeenCalledWith(mockOrders);
         expect(mockRes.json).toHaveBeenCalledTimes(1);
         expect(orderModel.find).toHaveBeenCalledWith({});
@@ -790,6 +805,7 @@ describe("Auth Controller Unit Tests", () => {
 
     describe("Success Cases", () => {
       it("should receive orderId from req.params and status from req.body", async () => {
+        // Arrange
         const orderId = "order123";
         const status = "Processing";
         const updatedOrder = { _id: orderId, status, buyer: "user1", products: [] };
@@ -801,8 +817,10 @@ describe("Auth Controller Unit Tests", () => {
         const mockRes = createMockRes();
         orderModel.findByIdAndUpdate = jest.fn().mockResolvedValue(updatedOrder);
 
+        // Act
         await orderStatusController(mockReq, mockRes);
 
+        // Assert
         expect(orderModel.findByIdAndUpdate).toHaveBeenCalledWith(
           orderId,
           { status },
@@ -858,6 +876,7 @@ describe("Auth Controller Unit Tests", () => {
 
     describe("Failure Cases", () => {
       it("should return 500 and log error when findByIdAndUpdate fails", async () => {
+        // Arrange
         const orderId = "order123";
         const status = "Processing";
         const dbError = new Error("Database update failed");
@@ -869,8 +888,10 @@ describe("Auth Controller Unit Tests", () => {
         const mockRes = createMockRes();
         orderModel.findByIdAndUpdate = jest.fn().mockRejectedValue(dbError);
 
+        // Act
         await orderStatusController(mockReq, mockRes);
 
+        // Assert
         expect(mockRes.status).toHaveBeenCalledWith(500);
         expect(mockRes.send).toHaveBeenCalledWith(
           expect.objectContaining({

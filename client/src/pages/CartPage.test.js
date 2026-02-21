@@ -11,16 +11,20 @@ describe("totalPrice", () => {
     consoleLogSpy.mockRestore();
   });
 
-  it("calculates sum of all item prices in cart array", () => {
+  it("should calculate sum of all item prices in cart array", () => {
+    // Arrange
     const cart = [
       { _id: "1", name: "A", price: 10 },
       { _id: "2", name: "B", price: 20 },
       { _id: "3", name: "C", price: 15 },
     ];
-    expect(totalPrice(cart)).toBe("$45.00");
+    // Act
+    const result = totalPrice(cart);
+    // Assert
+    expect(result).toBe("$45.00");
   });
 
-  it("sums item.price for each item", () => {
+  it("should sum item.price for each item", () => {
     const cart = [
       { _id: "1", price: 99.99 },
       { _id: "2", price: 0.01 },
@@ -28,39 +32,42 @@ describe("totalPrice", () => {
     expect(totalPrice(cart)).toBe("$100.00");
   });
 
-  it("formats total as USD currency using toLocaleString", () => {
+  it("should format total as USD currency using toLocaleString", () => {
     const cart = [{ _id: "1", price: 1234.5 }];
     const result = totalPrice(cart);
     expect(result).toMatch(/\$[\d,]+\.\d{2}/);
     expect(result).toBe("$1,234.50");
   });
 
-  it("returns $0.00 for empty cart array", () => {
+  it("should return $0.00 for empty cart array", () => {
     expect(totalPrice([])).toBe("$0.00");
   });
 
-  it("handles undefined cart with optional chaining (returns $0.00)", () => {
+  it("should handle undefined cart with optional chaining (returns $0.00)", () => {
     expect(totalPrice(undefined)).toBe("$0.00");
   });
 
-  it("handles null cart with optional chaining (returns $0.00)", () => {
+  it("should handle null cart with optional chaining (returns $0.00)", () => {
     expect(totalPrice(null)).toBe("$0.00");
   });
 
-  it("returns a formatted currency string", () => {
+  it("should return a formatted currency string", () => {
     const cart = [{ _id: "1", price: 5 }];
     const result = totalPrice(cart);
     expect(typeof result).toBe("string");
     expect(result).toBe("$5.00");
   });
 
-  it("logs error to console and does not throw when iteration throws", () => {
+  it("should log error to console and not throw when iteration throws", () => {
+    // Arrange
     const throwingCart = {
       map: () => {
         throw new Error("map error");
       },
     };
+    // Act
     const result = totalPrice(throwingCart);
+    // Assert
     expect(consoleLogSpy).toHaveBeenCalledWith(expect.any(Error));
     expect(result).toBeUndefined();
   });

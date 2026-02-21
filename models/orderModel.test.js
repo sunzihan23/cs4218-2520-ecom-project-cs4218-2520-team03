@@ -17,27 +17,29 @@ describe("Order model schema", () => {
   });
 
   describe("Schema structure", () => {
-    test("products is an array of ObjectIds referencing Products", () => {
+    test("should define products as array of ObjectIds referencing Products", () => {
+      // Arrange & Act
       const path = orderModel.schema.path("products");
+      // Assert
       expect(path).toBeDefined();
       expect(path.instance).toBe("Array");
       expect(path.caster?.instance).toBe("ObjectId");
       expect(path.caster?.options?.ref).toBe("Products");
     });
 
-    test("payment is an object (no strict validation)", () => {
+    test("should define payment as object (no strict validation)", () => {
       const path = orderModel.schema.path("payment");
       expect(path).toBeDefined();
     });
 
-    test("buyer is ObjectId referencing users", () => {
+    test("should define buyer as ObjectId referencing users", () => {
       const path = orderModel.schema.path("buyer");
       expect(path).toBeDefined();
       expect(path.instance).toBe("ObjectId");
       expect(path.options.ref).toBe("users");
     });
 
-    test("status is a String", () => {
+    test("should define status as String", () => {
       const path = orderModel.schema.path("status");
       expect(path).toBeDefined();
       expect(path.instance).toBe("String");
@@ -45,12 +47,14 @@ describe("Order model schema", () => {
   });
 
   describe("Default status", () => {
-    test('default status is "Not Process" when status is not provided', () => {
+    test('should default status to "Not Process" when status is not provided', () => {
+      // Arrange & Act
       const doc = new orderModel({
         products: [],
         payment: {},
         buyer: validOrderId(),
       });
+      // Assert
       expect(doc.status).toBe("Not Process");
     });
   });
@@ -59,21 +63,23 @@ describe("Order model schema", () => {
     const validStatuses = ["Not Process", "Processing", "Shipped", "deliverd", "cancel"];
 
     validStatuses.forEach((status) => {
-      test(`accepts valid status "${status}"`, () => {
+      test(`should accept valid status "${status}"`, () => {
         const doc = new orderModel({ ...validDoc, status });
         const err = doc.validateSync();
         expect(err).toBeUndefined();
       });
     });
 
-    test("rejects invalid status with validation error", () => {
+    test("should reject invalid status with validation error", () => {
+      // Arrange & Act
       const doc = new orderModel({ ...validDoc, status: "InvalidStatus" });
       const err = doc.validateSync();
+      // Assert
       expect(err).toBeDefined();
       expect(err.errors.status).toBeDefined();
     });
 
-    test("rejects empty string status", () => {
+    test("should reject empty string status", () => {
       const doc = new orderModel({ ...validDoc, status: "" });
       const err = doc.validateSync();
       expect(err).toBeDefined();
@@ -82,31 +88,31 @@ describe("Order model schema", () => {
   });
 
   describe("Timestamps", () => {
-    test("timestamps option is enabled", () => {
+    test("should have timestamps option enabled", () => {
       expect(orderModel.schema.options.timestamps).toBe(true);
     });
 
-    test("schema has createdAt and updatedAt paths", () => {
+    test("should have createdAt and updatedAt paths", () => {
       expect(orderModel.schema.path("createdAt")).toBeDefined();
       expect(orderModel.schema.path("updatedAt")).toBeDefined();
     });
   });
 
   describe("Product references", () => {
-    test("products array accepts multiple ObjectIds", () => {
+    test("should accept multiple ObjectIds in products array", () => {
       const productIds = [validProductId(), validProductId(), validProductId()];
       const doc = new orderModel({ ...validDoc, products: productIds });
       expect(doc.validateSync()).toBeUndefined();
       expect(doc.products).toHaveLength(3);
     });
 
-    test("products array can be empty", () => {
+    test("should allow empty products array", () => {
       const doc = new orderModel({ ...validDoc, products: [] });
       expect(doc.validateSync()).toBeUndefined();
       expect(doc.products).toHaveLength(0);
     });
 
-    test("products array rejects non-ObjectId values", () => {
+    test("should reject non-ObjectId values in products array", () => {
       const doc = new orderModel({ ...validDoc, products: ["not-an-objectid", 123] });
       const err = doc.validateSync();
       expect(err).toBeDefined();
@@ -115,13 +121,13 @@ describe("Order model schema", () => {
   });
 
   describe("Buyer reference", () => {
-    test("buyer accepts valid ObjectId", () => {
+    test("should accept valid ObjectId for buyer", () => {
       const doc = new orderModel(validDoc);
       expect(doc.validateSync()).toBeUndefined();
       expect(doc.buyer).toBeDefined();
     });
 
-    test("buyer rejects invalid ObjectId", () => {
+    test("should reject invalid ObjectId for buyer", () => {
       const doc = new orderModel({ ...validDoc, buyer: "not-an-objectid" });
       const err = doc.validateSync();
       expect(err).toBeDefined();
@@ -130,13 +136,13 @@ describe("Order model schema", () => {
   });
 
   describe("Payment field", () => {
-    test("payment accepts empty object", () => {
+    test("should accept empty object for payment", () => {
       const doc = new orderModel({ ...validDoc, payment: {} });
       expect(doc.validateSync()).toBeUndefined();
       expect(doc.payment).toEqual({});
     });
 
-    test("payment accepts arbitrary object structure", () => {
+    test("should accept arbitrary object structure for payment", () => {
       const doc = new orderModel({
         ...validDoc,
         payment: { method: "card", id: "pay_123", amount: 99 },
@@ -147,7 +153,7 @@ describe("Order model schema", () => {
   });
 
   describe("Minimal required fields", () => {
-    test("order can be created with products array, payment object, and buyer ObjectId", () => {
+    test("should create order with products array, payment object, and buyer ObjectId", () => {
       const doc = new orderModel({
         products: [],
         payment: {},
@@ -161,7 +167,7 @@ describe("Order model schema", () => {
       expect(doc.buyer).toBeDefined();
     });
 
-    test("valid full document has no validation error", () => {
+    test("should pass validation for valid full document", () => {
       const doc = new orderModel(validDoc);
       expect(doc.validateSync()).toBeUndefined();
     });
