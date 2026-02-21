@@ -2,7 +2,7 @@ import React from "react";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { CartProvider, useCart } from "./cart.js";
-
+//Seah Yi Xun Ryo A0252602R, tests for cart.js
 // consumer component to read context and expose cart and setCart
 const TestConsumer = () => {
   const [cart, setCart] = useCart();
