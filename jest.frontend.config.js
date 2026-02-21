@@ -34,6 +34,7 @@ export default {
   collectCoverage: true,
   collectCoverageFrom: [
     "client/src/pages/Auth/**",
+    "client/src/context/**",
     "client/src/components/Form/CategoryForm.js",
     "client/src/components/Footer.js",
     "client/src/components/Header.js",
@@ -52,10 +53,8 @@ export default {
     "client/src/pages/Pagenotfound.js",
     "client/src/pages/About.js",
     "client/src/pages/Search.js",
-    "client/src/context/search.js",
     "client/src/hooks/useCategory.js",
     "client/src/components/AdminMenu.js",
-    "client/src/context/cart.js",
     "client/src/pages/CategoryProduct.js",
     "client/src/pages/ProductDetails.js",
     "client/src/components/AdminMenu.js"
