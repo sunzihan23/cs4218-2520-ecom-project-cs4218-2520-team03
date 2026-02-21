@@ -108,7 +108,7 @@ describe("ProductDetails", () => {
         fireEvent.click(btn);
         expect(mockNavigate).toHaveBeenCalledWith("/product/mock-related-product");
     });
-    test("logs error message when get product axios request fails", async () => {
+    test("calls toast error when get product axios request fails", async () => {
         useParams.mockReturnValue({ slug: "single-mock-product" });
         const err = new Error("get product fail");
         axios.get.mockRejectedValueOnce(err);
@@ -117,7 +117,7 @@ describe("ProductDetails", () => {
             expect(toast.error).toHaveBeenCalled()
         });
     });
-    test("logs error message when get related product axios request fails", async () => {
+    test("calls toast error when get related product axios request fails", async () => {
         useParams.mockReturnValue({ slug: "single-mock-product" });
         const err = new Error("get related product fail");
         axios.get
