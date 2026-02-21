@@ -137,6 +137,10 @@ To begin unit testing with Jest in your project, follow these steps:
 ## 6. Task Allocation
 1. Chen Peiran
 2. Chen Zhiruo
+- Write unit tests for product controller (ProductController.js)
+- Write unit tests for product model (ProductModel.js)
+- Write unit tests for product details and category product (ProductDetails.js, CategoryProduct.js)
+- Write unit tests for admin admin product view (Products.js)
 3. Seah Yi Xun, Ryo
 - Write unit tests for auth controller (updateProfileController, getOrdersController, getAllOrdersController, orderStatusController in authController.js / authController.test.js)
 - Write unit tests for order model (orderModel.js)

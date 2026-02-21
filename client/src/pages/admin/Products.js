@@ -1,3 +1,4 @@
+//Chen Zhiruo A0256855N
 import React, { useState, useEffect } from "react";
 import AdminMenu from "../../components/AdminMenu";
 import Layout from "./../../components/Layout";
@@ -5,7 +6,6 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
 
-//Chen Zhiruo A0256855N
 const Products = () => {
   const [products, setProducts] = useState([]);
   const [page, setPage] = useState(1);

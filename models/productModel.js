@@ -1,6 +1,6 @@
+//Chen Zhiruo A0256855N
 import mongoose from "mongoose";
 
-//Chen Zhiruo A0256855N
 const productSchema = new mongoose.Schema(
   {
     name: {
