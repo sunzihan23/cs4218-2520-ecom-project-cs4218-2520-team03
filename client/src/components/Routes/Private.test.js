@@ -12,6 +12,8 @@ jest.mock("../../context/auth", () => ({
     useAuth: jest.fn()
 }));
 
+const setAuth = jest.fn();
+
 jest.mock("../Spinner", () =>
     () => <div>Spinner</div>
 );
@@ -26,7 +28,7 @@ describe("PrivateRoute Component", () => {
     });
 
     it("renders Spinner and does not call API when no token", () => {
-        useAuth.mockReturnValue([{ user: "user", token: "" }, jest.fn()]);
+        useAuth.mockReturnValue([{ user: "user", token: "" }, setAuth]);
 
         const { getByText } = render(<PrivateRoute />);
 
@@ -35,7 +37,7 @@ describe("PrivateRoute Component", () => {
     });
 
     it("renders Outlet when authentication succeeds", async () => {
-        useAuth.mockReturnValue([{ user: "user", token: "mock-token" }, jest.fn()]);
+        useAuth.mockReturnValue([{ user: "user", token: "mock-token" }, setAuth]);
         axios.get.mockResolvedValueOnce({ data: { ok: true } });
 
         const { getByText } = render(<PrivateRoute />);
@@ -52,7 +54,7 @@ describe("PrivateRoute Component", () => {
     });
 
     it("renders Spinner when token is invalid", async () => {
-        useAuth.mockReturnValue([{ user: "user", token: "token" }, jest.fn()]);
+        useAuth.mockReturnValue([{ user: "user", token: "token" }, setAuth]);
         axios.get.mockResolvedValueOnce({ data: { ok: false } });
 
         const { getByText } = render(<PrivateRoute />);
