@@ -1,5 +1,10 @@
 import { totalPrice } from "./CartPage";
 
+/** Parse numeric value from USD-style string (e.g. "$1,234.50" -> 1234.5). */
+const parseUsdNumeric = (str) => parseFloat(String(str).replace(/[$,]/g, "")) || 0;
+
+const usdPattern = /\$[\d,]+\.\d{2}/;
+
 describe("totalPrice", () => {
   let consoleLogSpy;
 
@@ -20,8 +25,9 @@ describe("totalPrice", () => {
     ];
     // Act
     const result = totalPrice(cart);
-    // Assert
-    expect(result).toBe("$45.00");
+    // Assert — USD-style string + correct numeric total (avoids coupling to exact locale string)
+    expect(result).toMatch(usdPattern);
+    expect(parseUsdNumeric(result)).toBe(45);
   });
 
   it("should sum item.price for each item", () => {
@@ -29,37 +35,46 @@ describe("totalPrice", () => {
       { _id: "1", price: 99.99 },
       { _id: "2", price: 0.01 },
     ];
-    expect(totalPrice(cart)).toBe("$100.00");
+    const result = totalPrice(cart);
+    expect(result).toMatch(usdPattern);
+    expect(parseUsdNumeric(result)).toBeCloseTo(100, 2);
   });
 
-  it("should format total as USD currency using toLocaleString", () => {
+  it("should format total as USD currency", () => {
     const cart = [{ _id: "1", price: 1234.5 }];
     const result = totalPrice(cart);
-    expect(result).toMatch(/\$[\d,]+\.\d{2}/);
-    expect(result).toBe("$1,234.50");
+    expect(result).toMatch(usdPattern);
+    expect(parseUsdNumeric(result)).toBe(1234.5);
   });
 
-  it("should return $0.00 for empty cart array", () => {
-    expect(totalPrice([])).toBe("$0.00");
+  it("should return zero formatted as USD for empty cart array", () => {
+    const result = totalPrice([]);
+    expect(result).toMatch(usdPattern);
+    expect(parseUsdNumeric(result)).toBe(0);
   });
 
-  it("should handle undefined cart with optional chaining (returns $0.00)", () => {
-    expect(totalPrice(undefined)).toBe("$0.00");
+  it("should handle undefined cart with optional chaining (returns zero)", () => {
+    const result = totalPrice(undefined);
+    expect(result).toMatch(usdPattern);
+    expect(parseUsdNumeric(result)).toBe(0);
   });
 
-  it("should handle null cart with optional chaining (returns $0.00)", () => {
-    expect(totalPrice(null)).toBe("$0.00");
+  it("should handle null cart with optional chaining (returns zero)", () => {
+    const result = totalPrice(null);
+    expect(result).toMatch(usdPattern);
+    expect(parseUsdNumeric(result)).toBe(0);
   });
 
   it("should return a formatted currency string", () => {
     const cart = [{ _id: "1", price: 5 }];
     const result = totalPrice(cart);
     expect(typeof result).toBe("string");
-    expect(result).toBe("$5.00");
+    expect(result).toMatch(usdPattern);
+    expect(parseUsdNumeric(result)).toBe(5);
   });
 
-  it("should log error to console and not throw when iteration throws", () => {
-    // Arrange
+  it("should not throw and should log error when iteration throws", () => {
+    // Arrange — unusual object that mimics array but throws in map
     const throwingCart = {
       map: () => {
         throw new Error("map error");
@@ -67,7 +82,7 @@ describe("totalPrice", () => {
     };
     // Act
     const result = totalPrice(throwingCart);
-    // Assert
+    // Assert — documents current behavior: log error and return undefined
     expect(consoleLogSpy).toHaveBeenCalledWith(expect.any(Error));
     expect(result).toBeUndefined();
   });
