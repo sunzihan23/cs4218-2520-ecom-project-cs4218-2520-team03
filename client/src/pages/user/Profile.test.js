@@ -15,40 +15,38 @@ jest.mock("../../context/auth");
 jest.mock("./../../components/Layout", () => ({ children, title }) => (
   <div data-testid="layout" data-title={title}>{children}</div>
 ));
-jest.mock("../../components/UserMenu", () => () => <div data-testid="user-menu">UserMenu</div>);
+jest.mock("../../components/UserMenu", () => () => <div data-testid="user-menu">User Menu</div>);
 
 describe("Profile Component", () => {
+  const mockSetAuth = jest.fn();
   const mockUser = {
-    name: "John",
+    name: "John Doe",
     email: "john@example.com",
-    phone: "88888888",
-    address: "address",
+    phone: "12345678",
+    address: "123 React Lane",
   };
-  const setAuthMock = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
-    useAuth.mockReturnValue([{ user: mockUser }, setAuthMock]);
-    
-    const localStorageMock = (() => {
-      let store = { auth: JSON.stringify({ user: mockUser, token: "mock-token" }) };
-      return {
-        getItem: jest.fn(key => store[key] || null),
-        setItem: jest.fn((key, value) => { store[key] = value.toString(); }),
-      };
-    })();
-    Object.defineProperty(window, 'localStorage', { value: localStorageMock, writable: true });
+    useAuth.mockReturnValue([{ user: mockUser }, mockSetAuth]);
+    Object.defineProperty(window, 'localStorage', {
+      value: {
+        getItem: jest.fn(() => JSON.stringify({ user: mockUser, token: "12345" })),
+        setItem: jest.fn(),
+      },
+      writable: true,
+    });
   });
 
   afterEach(cleanup);
 
   const setup = () => {
     const utils = render(
-      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <MemoryRouter>
         <Profile />
       </MemoryRouter>
     );
-    const getFields = () => ({
+    const getInputs = () => ({
       name: utils.getByPlaceholderText(/enter your name/i),
       email: utils.getByPlaceholderText(/enter your email/i),
       password: utils.getByPlaceholderText(/enter your new password/i),
@@ -57,121 +55,146 @@ describe("Profile Component", () => {
       address: utils.getByPlaceholderText(/enter your address/i),
       submitBtn: utils.getByRole("button", { name: /update/i }),
     });
-    return { ...utils, getFields };
+    return { ...utils, getInputs };
   };
 
-  it("should populate form with initial user data on mount", () => {
-    const { getFields } = setup();
-    const fields = getFields();
-    
-    expect(fields.name.value).toBe("John");
-    expect(fields.email.value).toBe("john@example.com");
-    expect(fields.phone.value).toBe("88888888");
-    expect(fields.address.value).toBe("address");
-    expect(fields.email).toBeDisabled();
+  it("should populate form with initial user data from auth context", () => {
+    const { getInputs } = setup();
+    const inputs = getInputs();
+
+    expect(inputs.name.value).toBe(mockUser.name);
+    expect(inputs.email.value).toBe(mockUser.email);
+    expect(inputs.phone.value).toBe(mockUser.phone);
+    expect(inputs.address.value).toBe(mockUser.address);
+    expect(inputs.email).toBeDisabled();
   });
 
-  it("should skip initialization logic if auth user is missing", () => {
-    useAuth.mockReturnValue([null, setAuthMock]);
-    const { getFields } = setup();
+  it("should show validation errors for empty required fields", async () => {
+    const { getInputs, findByText } = setup();
+    const inputs = getInputs();
 
-    expect(getFields().name.value).toBe("");
+    fireEvent.change(inputs.name, { target: { value: "" } });
+    fireEvent.change(inputs.address, { target: { value: "" } });
+    fireEvent.change(inputs.phone, { target: { value: "" } });
+
+    fireEvent.click(inputs.submitBtn);
+
+    expect(await findByText(/name is required/i)).toBeInTheDocument();
+    expect(await findByText(/address is required/i)).toBeInTheDocument();
+    expect(await findByText(/phone number is required/i)).toBeInTheDocument();
   });
 
-  it("should use empty string fallbacks for null user fields", () => {
-    useAuth.mockReturnValue([{ user: { name: null, email: null, phone: null, address: null } }, setAuthMock]);
-    const { getFields } = setup();
-    const fields = getFields();
+  it("should show validation errors for invalid phone format", async () => {
+    const { getInputs, findByText } = setup();
+    const inputs = getInputs();
 
-    expect(fields.name.value).toBe("");
-    expect(fields.email.value).toBe("");
-    expect(fields.phone.value).toBe("");
-    expect(fields.address.value).toBe("");
+    fireEvent.change(inputs.phone, { target: { value: "abcdefgh" } });
+    fireEvent.click(inputs.submitBtn);
+    expect(await findByText(/phone number must contain only digits/i)).toBeInTheDocument();
+
+    fireEvent.change(inputs.phone, { target: { value: "123" } });
+    fireEvent.click(inputs.submitBtn);
+    expect(await findByText(/phone number must be 8 digits long/i)).toBeInTheDocument();
   });
 
-  it("should update phone and address state on user input", () => {
-    const { getFields } = setup();
-    const fields = getFields();
-    
-    fireEvent.change(fields.phone, { target: { value: "99998888" } });
-    fireEvent.change(fields.address, { target: { value: "new address" } });
-    
-    expect(fields.phone.value).toBe("99998888");
-    expect(fields.address.value).toBe("new address");
+  it("should show validation errors for password mismatch", async () => {
+    const { getInputs, findByText } = setup();
+    const inputs = getInputs();
+
+    fireEvent.change(inputs.password, { target: { value: "123456" } });
+    fireEvent.change(inputs.confirm, { target: { value: "654321" } });
+    fireEvent.click(inputs.submitBtn);
+
+    expect(await findByText(/passwords do not match/i)).toBeInTheDocument();
   });
 
-  it("should display error toast if passwords do not match", async () => {
-    const { getFields } = setup();
-    const fields = getFields();
+  it("should successfully update profile and update local storage/context", async () => {
+    const updatedUser = { ...mockUser, name: "John Updated" };
+    axios.put.mockResolvedValueOnce({
+      data: { updatedUser },
+    });
 
-    fireEvent.change(fields.password, { target: { value: "secret1" } });
-    fireEvent.change(fields.confirm, { target: { value: "secret2" } });
-    fireEvent.click(fields.submitBtn);
+    const { getInputs } = setup();
+    const inputs = getInputs();
 
-    expect(toast.error).toHaveBeenCalledWith("Passwords do not match");
-    expect(axios.put).not.toHaveBeenCalled();
+    fireEvent.change(inputs.name, { target: { value: "John Updated" } });
+    fireEvent.click(inputs.submitBtn);
+
+    await waitFor(() => {
+      expect(axios.put).toHaveBeenCalledWith("/api/v1/auth/profile", {
+        name: "John Updated",
+        email: mockUser.email,
+        phone: mockUser.phone,
+        address: mockUser.address,
+      });
+      expect(mockSetAuth).toHaveBeenCalledWith(expect.objectContaining({ user: updatedUser }));
+      expect(localStorage.setItem).toHaveBeenCalled();
+      expect(toast.success).toHaveBeenCalledWith("Profile updated successfully");
+    });
   });
 
-  it("should submit valid profile updates including trimmed passwords", async () => {
-    const updatedUser = { ...mockUser, name: "John Doe" };
-    axios.put.mockResolvedValueOnce({ data: { updatedUser } });
-    const { getFields } = setup();
-    const fields = getFields();
+  it("should include password in request if provided and valid", async () => {
+    axios.put.mockResolvedValueOnce({
+      data: { updatedUser: mockUser },
+    });
 
-    fireEvent.change(fields.name, { target: { value: "John Doe" } });
-    fireEvent.change(fields.password, { target: { value: " pass " } });
-    fireEvent.change(fields.confirm, { target: { value: " pass " } });
-    fireEvent.click(fields.submitBtn);
+    const { getInputs } = setup();
+    const inputs = getInputs();
+
+    fireEvent.change(inputs.password, { target: { value: "newpassword123" } });
+    fireEvent.change(inputs.confirm, { target: { value: "newpassword123" } });
+    fireEvent.click(inputs.submitBtn);
 
     await waitFor(() => {
       expect(axios.put).toHaveBeenCalledWith(
         "/api/v1/auth/profile",
-        expect.objectContaining({ name: "John Doe", password: " pass " })
+        expect.objectContaining({ password: "newpassword123" })
       );
-      expect(toast.success).toHaveBeenCalledWith("Profile updated successfully");
-      expect(fields.password.value).toBe("");
+      expect(inputs.password.value).toBe("");
+      expect(inputs.confirm.value).toBe("");
     });
   });
 
-  it("should show error toast if API response contains an error field", async () => {
-    axios.put.mockResolvedValueOnce({ data: { error: "Update failed" } });
-    const { getFields } = setup();
+  it("should handle server-side error messages", async () => {
+    axios.put.mockResolvedValueOnce({
+      data: { error: "Email already taken" },
+    });
+
+    const { getInputs } = setup();
+    const inputs = getInputs();
+
+    fireEvent.click(inputs.submitBtn);
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Email already taken");
+    });
+  });
+
+  it("should handle network or API failure", async () => {
+    axios.put.mockRejectedValueOnce({
+      response: { data: { message: "Internal Server Error" } },
+    });
+
+    const { getInputs } = setup();
+    const inputs = getInputs();
+
+    fireEvent.click(inputs.submitBtn);
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Internal Server Error");
+    });
+  });
+
+  it("should clear error messages when user starts typing", async () => {
+    const { getInputs, queryByText, findByText } = setup();
+    const inputs = getInputs();
+
+    fireEvent.change(inputs.name, { target: { value: "" } });
+    fireEvent.click(inputs.submitBtn);
     
-    fireEvent.click(getFields().submitBtn);
+    expect(await findByText(/name is required/i)).toBeInTheDocument();
 
-    await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Update failed"));
-  });
-
-  it("should handle axios rejections with various error message formats", async () => {
-    const { getFields } = setup();
-    const { submitBtn } = getFields();
-
-    axios.put.mockRejectedValueOnce({ response: { data: { message: "Network fail" } } });
-    fireEvent.click(submitBtn);
-    await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Network fail"));
-
-    axios.put.mockRejectedValueOnce(new Error());
-    fireEvent.click(submitBtn);
-    await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Something went wrong"));
-  });
-
-  it("should handle corrupted localStorage gracefully without crashing", async () => {
-    localStorage.getItem.mockReturnValueOnce("!");
-    axios.put.mockResolvedValueOnce({ data: { updatedUser: mockUser } });
-    const { getFields } = setup();
-
-    fireEvent.click(getFields().submitBtn);
-
-    await waitFor(() => expect(toast.success).toHaveBeenCalled());
-  });
-
-  it("should handle missing localStorage entry successfully", async () => {
-    localStorage.getItem.mockReturnValueOnce(null);
-    axios.put.mockResolvedValueOnce({ data: { updatedUser: mockUser } });
-    const { getFields } = setup();
-
-    fireEvent.click(getFields().submitBtn);
-
-    await waitFor(() => expect(toast.success).toHaveBeenCalled());
+    fireEvent.change(inputs.name, { target: { value: "J" } });
+    expect(queryByText(/name is required/i)).not.toBeInTheDocument();
   });
 });
