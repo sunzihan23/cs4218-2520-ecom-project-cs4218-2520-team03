@@ -3,6 +3,7 @@ import React from "react";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import axios from "axios";
 import ProductDetails from "./ProductDetails";
+import toast from "react-hot-toast";
 
 jest.mock("axios");
 jest.mock("./../components/Layout", () => {
@@ -10,6 +11,9 @@ jest.mock("./../components/Layout", () => {
         return <div data-testid="layout">{children}</div>;
     };
 });
+jest.mock("react-hot-toast", () => ({
+    error: jest.fn(),
+}));
 
 const mockNavigate = jest.fn();
 
