@@ -8,7 +8,7 @@ import { AiFillWarning } from "react-icons/ai";
 import axios from "axios";
 import toast from "react-hot-toast";
 import "../styles/CartStyles.css";
-
+//Seah Yi Xun Ryo A0252602R, CartPage.js
 // Exported for unit testing
 export const totalPrice = (cart) => {
   try {
