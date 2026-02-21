@@ -1,10 +1,10 @@
+//Chen Zhiruo A0256855N
 import productModel from "../models/productModel.js";
 import categoryModel from "../models/categoryModel.js";
 
 import fs from "fs";
 import slugify from "slugify";
 
-//Chen Zhiruo A0256855N
 //helper to validate product info
 export function validateProductFields(fields, files, requirePhoto) {
   const { name, description, price, category, quantity, shipping } = fields || {};

@@ -1,10 +1,10 @@
+//Chen Zhiruo A0256855N
 import React from "react";
 import {fireEvent, render, screen, waitFor} from "@testing-library/react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import Products from "./Products";
 
-//Chen Zhiruo A0256855N
 jest.mock("axios");
 jest.mock("react-hot-toast", () => ({
     error: jest.fn(),
