@@ -54,6 +54,11 @@ export default {
     "client/src/pages/Search.js",
     "client/src/context/search.js",
     "client/src/hooks/useCategory.js",
+    "client/src/components/AdminMenu.js",
+    "client/src/context/cart.js",
+    "client/src/pages/CategoryProduct.js",
+    "client/src/pages/ProductDetails.js",
+    "client/src/components/AdminMenu.js"
   ],
   coverageThreshold: {
     global: {
