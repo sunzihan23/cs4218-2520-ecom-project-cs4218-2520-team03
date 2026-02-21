@@ -20,7 +20,7 @@ jest.mock("./../../components/Layout", () => ({ children, title }) => (
   <div data-testid="layout" data-title={title}>{children}</div>
 ));
 
-describe("ForgotPassword Component Behavioral Tests", () => {
+describe("ForgotPassword Component", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -94,9 +94,9 @@ describe("ForgotPassword Component Behavioral Tests", () => {
     expect(queryByText(/passwords do not match/i)).not.toBeInTheDocument();
   });
 
-  it("should successfully reset password and navigate to login on success", async () => {
+  it("should successfully reset password and use response message if present", async () => {
     axios.post.mockResolvedValueOnce({
-      data: { success: true, message: "Password reset successful" },
+      data: { success: true, message: "Success Message From Server" },
     });
 
     const { getFields } = setup();
@@ -114,15 +114,30 @@ describe("ForgotPassword Component Behavioral Tests", () => {
         answer: "Soccer",
         newPassword: "password123",
       });
-      expect(toast.success).toHaveBeenCalledWith("Password reset successful");
+      expect(toast.success).toHaveBeenCalledWith("Success Message From Server");
       expect(mockedNavigate).toHaveBeenCalledWith("/login");
     });
   });
 
-  it("should handle server-side failure via toast", async () => {
-    axios.post.mockResolvedValueOnce({
-      data: { success: false, message: "Incorrect email or security answer" },
+  it("should use fallback success message when API response message is missing", async () => {
+    axios.post.mockResolvedValueOnce({ data: { success: true } });
+
+    const { getFields } = setup();
+    const fields = getFields();
+
+    fireEvent.change(fields.email, { target: { value: "test@example.com" } });
+    fireEvent.change(fields.answer, { target: { value: "Soccer" } });
+    fireEvent.change(fields.password, { target: { value: "password123" } });
+    fireEvent.change(fields.confirm, { target: { value: "password123" } });
+    fireEvent.click(fields.submitBtn);
+
+    await waitFor(() => {
+      expect(toast.success).toHaveBeenCalledWith("Password reset successful");
     });
+  });
+
+  it("should handle server-side failure with fallback message", async () => {
+    axios.post.mockResolvedValueOnce({ data: { success: false } });
 
     const { getFields } = setup();
     const fields = getFields();
@@ -134,7 +149,7 @@ describe("ForgotPassword Component Behavioral Tests", () => {
     fireEvent.click(fields.submitBtn);
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith("Incorrect email or security answer");
+      expect(toast.error).toHaveBeenCalledWith("Reset failed");
     });
   });
 
