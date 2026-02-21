@@ -1,6 +1,6 @@
 // Sun Zihan, A0259581R
 import React from "react";
-import { render, act, waitFor } from "@testing-library/react";
+import { render, fireEvent, waitFor, cleanup } from "@testing-library/react";
 import axios from "axios";
 import { AuthProvider, useAuth } from "./auth";
 
@@ -16,8 +16,10 @@ describe("Auth Context and useAuth Hook", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     localStorage.clear();
-    axios.defaults.headers.common["Authorization"] = "";
+    axios.defaults.headers.common = {};
   });
+
+  afterEach(cleanup);
 
   const TestComponent = () => {
     const [auth, setAuth] = useAuth();
@@ -25,18 +27,17 @@ describe("Auth Context and useAuth Hook", () => {
       <div>
         <div data-testid="user">{auth?.user ? auth.user.name : "null"}</div>
         <div data-testid="token">{auth?.token || "empty"}</div>
-        <button
-          onClick={() =>
-            setAuth({ user: { name: "Updated User" }, token: "updated-token" })
-          }
-        >
-          UPDATE_AUTH
+        <button onClick={() => setAuth({ user: { name: "New User" }, token: "new-token" })}>
+          LOGIN
+        </button>
+        <button onClick={() => setAuth({ user: null, token: "" })}>
+          LOGOUT
         </button>
       </div>
     );
   };
 
-  it("should initialize with default null user and empty token", () => {
+  it("should provide default empty auth state and no authorization header", () => {
     const { getByTestId } = render(
       <AuthProvider>
         <TestComponent />
@@ -45,18 +46,12 @@ describe("Auth Context and useAuth Hook", () => {
 
     expect(getByTestId("user").textContent).toBe("null");
     expect(getByTestId("token").textContent).toBe("empty");
-    expect(axios.defaults.headers.common["Authorization"]).toBe("");
+    expect(axios.defaults.headers.common["Authorization"]).toBeUndefined();
   });
 
-  it("should hydrate state from localStorage on mount and update axios headers", async () => {
-    const mockAuthData = {
-      user: { name: "John Doe" },
-      token: "mock-jwt-token",
-    };
-
-    const getItemSpy = jest
-      .spyOn(Storage.prototype, "getItem")
-      .mockReturnValue(JSON.stringify(mockAuthData));
+  it("should restore auth state from localStorage and set authorization header on load", async () => {
+    const savedAuth = { user: { name: "Jane Doe" }, token: "secret-token" };
+    localStorage.setItem("auth", JSON.stringify(savedAuth));
 
     const { getByTestId } = render(
       <AuthProvider>
@@ -64,49 +59,53 @@ describe("Auth Context and useAuth Hook", () => {
       </AuthProvider>
     );
 
-    expect(getItemSpy).toHaveBeenCalledWith("auth");
-    
     await waitFor(() => {
-      expect(getByTestId("user").textContent).toBe("John Doe");
-      expect(getByTestId("token").textContent).toBe("mock-jwt-token");
+      expect(getByTestId("user").textContent).toBe("Jane Doe");
+      expect(axios.defaults.headers.common["Authorization"]).toBe("secret-token");
     });
-
-    expect(axios.defaults.headers.common["Authorization"]).toBe("mock-jwt-token");
-    
-    getItemSpy.mockRestore();
   });
 
-  it("should handle invalid or missing localStorage data gracefully", () => {
-    jest.spyOn(Storage.prototype, "getItem").mockReturnValue(null);
-
-    const { getByTestId } = render(
-      <AuthProvider>
-        <TestComponent />
-      </AuthProvider>
-    );
-
-    expect(getByTestId("user").textContent).toBe("null");
-    expect(getByTestId("token").textContent).toBe("empty");
-  });
-
-  it("should update axios headers and context when setAuth is called", async () => {
+  it("should update global axios headers immediately when user logs in", async () => {
     const { getByText, getByTestId } = render(
       <AuthProvider>
         <TestComponent />
       </AuthProvider>
     );
 
-    const updateButton = getByText("UPDATE_AUTH");
-    
-    act(() => {
-      updateButton.click();
-    });
+    fireEvent.click(getByText("LOGIN"));
 
     await waitFor(() => {
-      expect(getByTestId("user").textContent).toBe("Updated User");
-      expect(getByTestId("token").textContent).toBe("updated-token");
+      expect(getByTestId("token").textContent).toBe("new-token");
+      expect(axios.defaults.headers.common["Authorization"]).toBe("new-token");
     });
+  });
 
-    expect(axios.defaults.headers.common["Authorization"]).toBe("updated-token");
+  it("should remove authorization headers from axios upon logout", async () => {
+    const { getByText } = render(
+      <AuthProvider>
+        <TestComponent />
+      </AuthProvider>
+    );
+    fireEvent.click(getByText("LOGIN"));
+    await waitFor(() => expect(axios.defaults.headers.common["Authorization"]).toBe("new-token"));
+
+    fireEvent.click(getByText("LOGOUT"));
+
+    await waitFor(() => {
+      expect(axios.defaults.headers.common["Authorization"]).toBeUndefined();
+    });
+  });
+
+  it("should remain in default state if localStorage contains invalid data", () => {
+    localStorage.setItem("auth", "corrupted-{json");
+
+    const { getByTestId } = render(
+      <AuthProvider>
+        <TestComponent />
+      </AuthProvider>
+    );
+
+    expect(getByTestId("user").textContent).toBe("null");
+    expect(getByTestId("token").textContent).toBe("empty");
   });
 });
