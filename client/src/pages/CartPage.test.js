@@ -1,6 +1,6 @@
 import { totalPrice } from "./CartPage";
 
-/** Parse numeric value from USD-style string (e.g. "$1,234.50" -> 1234.5). */
+//Parse numeric value from USD-style string ("$1,234.50" -> 1234.5). , dont use exact string matching
 const parseUsdNumeric = (str) => parseFloat(String(str).replace(/[$,]/g, "")) || 0;
 
 const usdPattern = /\$[\d,]+\.\d{2}/;
@@ -25,7 +25,7 @@ describe("totalPrice", () => {
     ];
     // Act
     const result = totalPrice(cart);
-    // Assert — USD-style string + correct numeric total (avoids coupling to exact locale string)
+    // Assert — string matching the usd pattern and the numeric total
     expect(result).toMatch(usdPattern);
     expect(parseUsdNumeric(result)).toBe(45);
   });
