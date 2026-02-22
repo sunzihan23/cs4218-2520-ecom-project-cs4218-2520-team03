@@ -78,6 +78,7 @@ jest.mock("antd", () => {
 describe("UpdateProduct Component", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    global.URL.createObjectURL = jest.fn(() => "mock-url");
   });
 
   const renderComponent = () =>
@@ -151,7 +152,6 @@ describe("UpdateProduct Component", () => {
   });
 
   test("should handle update product form submission", async () => {
-    global.URL.createObjectURL = jest.fn(() => "mock-url");
     axios.get
       .mockResolvedValueOnce({ data: { product: mockProduct } })
       .mockResolvedValueOnce({
@@ -329,7 +329,6 @@ describe("UpdateProduct Component", () => {
   });
 
   test("shows error toast on invalid price update product", async () => {
-    global.URL.createObjectURL = jest.fn(() => "mock-url");
     axios.get
       .mockResolvedValueOnce({ data: { product: mockProduct } })
       .mockResolvedValueOnce({
@@ -363,7 +362,6 @@ describe("UpdateProduct Component", () => {
   });
 
   test("shows error toast on invalid quantity update product", async () => {
-    global.URL.createObjectURL = jest.fn(() => "mock-url");
     axios.get
       .mockResolvedValueOnce({ data: { product: mockProduct } })
       .mockResolvedValueOnce({
@@ -426,7 +424,6 @@ describe("UpdateProduct Component", () => {
   });
 
   test("shows error toast on update failure", async () => {
-    global.URL.createObjectURL = jest.fn(() => "mock-url");
     axios.get
       .mockResolvedValueOnce({ data: { product: mockProduct } })
       .mockResolvedValueOnce({
@@ -509,7 +506,6 @@ describe("UpdateProduct Component", () => {
   });
 
   test("shows error toast when photo size exceeds limit on form submission", async () => {  
-    global.URL.createObjectURL = jest.fn(() => "mock-url");
     axios.get
       .mockResolvedValueOnce({
         data: {

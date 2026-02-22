@@ -54,6 +54,7 @@ describe("CreateProduct Component", () => {
     mockNavigate.mockClear();
     toast.error.mockClear();
     toast.success.mockClear();
+    global.URL.createObjectURL = jest.fn(() => "mock-url");
   });
 
   const renderComponent = () => {
@@ -178,7 +179,6 @@ describe("CreateProduct Component", () => {
     });
 
     test("shows error toast on invalid price input", async () => {
-      global.URL.createObjectURL = jest.fn(() => "mock-url");
       axios.get.mockResolvedValue({
         data: { success: true, category: mockCategories },
       });
@@ -223,7 +223,6 @@ describe("CreateProduct Component", () => {
       });
     });
     test("shows error toast on invalid quantity input", async () => {
-      global.URL.createObjectURL = jest.fn(() => "mock-url");
       axios.get.mockResolvedValue({
         data: { success: true, category: mockCategories },
       });
@@ -269,7 +268,6 @@ describe("CreateProduct Component", () => {
     });
 
     test("creates product on successful form submission", async () => {
-      global.URL.createObjectURL = jest.fn(() => "mock-url");
       const mockedProduct = {
         name: "Hoodie",
         description: "This is a hoodie.",
@@ -335,7 +333,6 @@ describe("CreateProduct Component", () => {
   });
 
   test("shows success toast and redirects on successful product creation", async () => {
-    global.URL.createObjectURL = jest.fn(() => "mock-url");
     axios.get.mockResolvedValue({
       data: { success: true, category: mockCategories },
     });
@@ -384,7 +381,6 @@ describe("CreateProduct Component", () => {
   });
 
   test("shows error toast on product creation failure", async () => {
-    global.URL.createObjectURL = jest.fn(() => "mock-url");
     axios.get.mockResolvedValue({
       data: { success: true, category: mockCategories },
     });
@@ -428,7 +424,6 @@ describe("CreateProduct Component", () => {
   });
 
   test("shows error toast on product creation exception", async () => {
-    global.URL.createObjectURL = jest.fn(() => "mock-url");
     axios.get.mockResolvedValue({
       data: { success: true, category: mockCategories },
     });
@@ -534,7 +529,6 @@ describe("CreateProduct Component", () => {
   });
 
   test("shows error toast when photo size exceeds limit on form submission", async () => {
-    global.URL.createObjectURL = jest.fn(() => "mock-url");
     axios.get.mockResolvedValue({
       data: { success: true, category: mockCategories },
     });
