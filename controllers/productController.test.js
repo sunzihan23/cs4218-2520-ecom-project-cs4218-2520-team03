@@ -154,7 +154,7 @@ describe("validateProductFields", () => {
     test("returns 400 when photo too large (> 1000000)", () => {
         expect(
             validateProductFields(validFields, { photo: { size: 1_000_001 } }, true)
-        ).toEqual({ status: 400, error: "Photo should be less then 1mb" });
+        ).toEqual({ status: 400, error: "Photo should be less than 1mb" });
     });
 
     test("returns null when photo is exactly 1mb", () => {
