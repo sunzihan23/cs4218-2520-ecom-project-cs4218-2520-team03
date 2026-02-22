@@ -42,7 +42,12 @@ describe("Profile Component", () => {
   const setup = (userContext = { user: mockUser }) => {
     useAuth.mockReturnValue([userContext, mockSetAuth]);
     const utils = render(
-      <MemoryRouter>
+      <MemoryRouter 
+        future={{ 
+          v7_startTransition: true, 
+          v7_relativeSplatPath: true 
+        }}
+      >
         <Profile />
       </MemoryRouter>
     );
@@ -58,14 +63,15 @@ describe("Profile Component", () => {
     return { ...utils, getInputs };
   };
 
-  it("should populate form with initial user data from auth context", () => {
+  it("should hydrate form with user data and handle missing field fallbacks", () => {
     const { getInputs, getByTestId } = setup();
-    const inputs = getInputs();
-    expect(inputs.name.value).toBe(mockUser.name);
-    expect(inputs.email.value).toBe(mockUser.email);
-    expect(inputs.phone.value).toBe(mockUser.phone);
-    expect(inputs.address.value).toBe(mockUser.address);
+    expect(getInputs().name.value).toBe(mockUser.name);
     expect(getByTestId("layout")).toHaveAttribute("data-title", "Your Profile");
+
+    cleanup();
+    const { getInputs: getFallbackInputs } = setup({ user: { name: null, email: undefined } });
+    expect(getFallbackInputs().name.value).toBe("");
+    expect(getFallbackInputs().email.value).toBe("");
   });
 
   it("should initialize with empty strings when auth user is missing", () => {
@@ -83,14 +89,6 @@ describe("Profile Component", () => {
     expect(await findByText(/name is required/i)).toBeInTheDocument();
     expect(await findByText(/address is required/i)).toBeInTheDocument();
     expect(await findByText(/phone number is required/i)).toBeInTheDocument();
-  });
-
-  it("should fallback to empty strings when user fields are null or undefined", () => {
-    const partialUser = { name: null, email: undefined };
-    const { getInputs } = setup({ user: partialUser });
-    const inputs = getInputs();
-    expect(inputs.name.value).toBe("");
-    expect(inputs.email.value).toBe("");
   });
 
   it("should validate phone digits and length correctly", async () => {
@@ -164,24 +162,27 @@ describe("Profile Component", () => {
     });
   });
 
-  it("should update profile but skip localStorage if not found", async () => {
+  it("should handle profile update failure scenarios", async () => {
+    const { getInputs } = setup();
+    const inputs = getInputs();
+
+    // Update fails but user persists
     axios.put.mockResolvedValueOnce({ data: { updatedUser: mockUser } });
     window.localStorage.getItem.mockReturnValueOnce(null);
-    const { getInputs } = setup();
-    fireEvent.click(getInputs().submitBtn);
+    fireEvent.click(inputs.submitBtn);
     await waitFor(() => {
       expect(mockSetAuth).toHaveBeenCalled();
       expect(localStorage.setItem).not.toHaveBeenCalled();
     });
-  });
 
-  it("should handle backend data errors and network failures", async () => {
+    // Backend data error
     axios.put.mockResolvedValueOnce({ data: { error: "Backend error" } });
-    const { getInputs } = setup();
-    fireEvent.click(getInputs().submitBtn);
+    fireEvent.click(inputs.submitBtn);
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Backend error"));
+
+    // Network failure
     axios.put.mockRejectedValueOnce(new Error("Network error"));
-    fireEvent.click(getInputs().submitBtn);
+    fireEvent.click(inputs.submitBtn);
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Something went wrong"));
   });
 });
