@@ -20,7 +20,7 @@ export function validateProductFields(fields, files, requirePhoto) {
     return { status: 400, error: "Photo is Required" };
   }
   if (photo && photo.size > 1_000_000)
-    return { status: 400, error: "Photo should be less then 1mb" };
+    return { status: 400, error: "Photo should be less than 1mb" };
   return null;
 }
 
