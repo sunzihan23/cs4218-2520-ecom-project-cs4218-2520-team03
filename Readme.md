@@ -136,6 +136,10 @@ To begin unit testing with Jest in your project, follow these steps:
 
 ## 6. Task Allocation
 1. Chen Peiran
+- Write unit tests for frontend pages and navigation components (HomePage.js, Dashboard.js, Header.js, Footer.js, UserMenu.js, About.js, Contact.js, Policy.js, Pagenotfound.js, userModel.js)
+- Write unit tests for layout infrastructure and route protection (Layout.js, Spinner.js, Private.js)
+- Write unit tests for Category (useCategory.js, Categories.js, categoryModel.js)
+- Write unit tests for Search (SearchInput.js, context/search.js, Search.js)
 2. Chen Zhiruo
 - Write unit tests for product controller (ProductController.js)
 - Write unit tests for product model (ProductModel.js)
