@@ -15,56 +15,57 @@ jest.mock("./../components/Layout", () => ({ children }) => (<div>{children}</di
 describe("Search Page", () => {
     beforeEach(() => {
         jest.clearAllMocks();
-        jest.resetModules();
     });
 
-    it("displays 'No Products Found' when no results found", () => {
-        useSearch.mockReturnValue([{ keyword: "exists", results: [] }, setValues]);
+    it("displays correctly when no results found", () => {
+        useSearch.mockReturnValue([{ keyword: "books", results: [] }, setValues]);
 
         const { getByText } = render(<Search />);
         expect(getByText("No Products Found")).toBeInTheDocument();
     });
 
     it("displays correct number of results found", () => {
-        const values = {
-            keyword: "exists",
+        const mockValues = {
+            keyword: "books",
             results: [
                 {
-                    name: "Existing Product",
-                    description: "Product Description",
+                    _id: "1",
+                    name: "Book A",
+                    description: "Description A",
                 },
                 {
-                    name: "Existing Product 2",
-                    description: "Product Description 2",
+                    _id: "2",
+                    name: "Book B",
+                    description: "Description B",
                 }
             ]
         };
-        useSearch.mockReturnValue([values, setValues]);
+        useSearch.mockReturnValue([mockValues, setValues]);
 
         const { getByText } = render(<Search />);
         expect(getByText("Found 2")).toBeInTheDocument();
     });
 
-    it("correctly displays search results when results are found", () => {
+    it("displays search results when found", () => {
         const mockValues = {
-            keyword: "exists",
+            keyword: "books",
             results: [{
                 _id: "1",
-                name: "Existing Product",
-                description: "product is good",
+                name: "Book A",
+                description: "Description A",
                 price: 50
             }]
         };
         useSearch.mockReturnValue([mockValues, setValues]);
 
         const { getByText, getByRole } = render(<Search />);
-        const image = getByRole("img", { name: "Existing Product" });
+        const image = getByRole("img", { name: "Book A" });
 
         expect(image).toBeInTheDocument();
         expect(image).toHaveAttribute("src", "/api/v1/product/product-photo/1");
 
-        expect(getByText("Existing Product")).toBeInTheDocument();
-        expect(getByText("product is good...")).toBeInTheDocument();
+        expect(getByText("Book A")).toBeInTheDocument();
+        expect(getByText("Description A...")).toBeInTheDocument();
         expect(getByText("$ 50")).toBeInTheDocument();
 
         expect(getByText("More Details")).toBeInTheDocument();

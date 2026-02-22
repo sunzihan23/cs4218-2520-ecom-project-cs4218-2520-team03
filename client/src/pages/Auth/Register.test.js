@@ -54,7 +54,7 @@ describe("Register Component", () => {
     expect(getByText(/name is required/i)).toBeInTheDocument();
 
     fireEvent.change(inputs.name, { target: { name: "name", value: "John" } });
-    
+
     expect(inputs.name.value).toBe("John");
     expect(queryByText(/name is required/i)).not.toBeInTheDocument();
   });
@@ -80,7 +80,7 @@ describe("Register Component", () => {
     fireEvent.change(inputs.phone, { target: { name: "phone", value: "abc" } });
     fireEvent.click(inputs.submitBtn);
     expect(getByText(/phone number must contain only digits/i)).toBeInTheDocument();
-    
+
     fireEvent.change(inputs.phone, { target: { name: "phone", value: "12345" } });
     fireEvent.click(inputs.submitBtn);
     expect(getByText(/phone number must be 8 digits long/i)).toBeInTheDocument();
@@ -142,7 +142,7 @@ describe("Register Component", () => {
     });
     const { getInputs } = setup();
     const inputs = getInputs();
-    
+
     fireEvent.change(inputs.name, { target: { name: "name", value: "John" } });
     fireEvent.change(inputs.email, { target: { name: "email", value: "john@test.com" } });
     fireEvent.change(inputs.password, { target: { name: "password", value: "pass123" } });

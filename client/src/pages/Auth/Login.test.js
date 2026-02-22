@@ -111,7 +111,7 @@ describe("Login Component", () => {
 
   it("should use fallback success message when API response message is missing", async () => {
     axios.post.mockResolvedValueOnce({ data: { success: true, user: {}, token: "" } });
-    
+
     const { getInputs } = setup();
     fireEvent.change(getInputs().email, { target: { value: "john@example.com" } });
     fireEvent.change(getInputs().password, { target: { value: "123456" } });
@@ -125,7 +125,7 @@ describe("Login Component", () => {
   it("should redirect to the intended location stored in navigation state", async () => {
     mockLocation.state = "/cart";
     axios.post.mockResolvedValueOnce({ data: { success: true } });
-    
+
     const { getInputs } = setup();
     fireEvent.change(getInputs().email, { target: { value: "john@example.com" } });
     fireEvent.change(getInputs().password, { target: { value: "123456" } });
@@ -141,7 +141,7 @@ describe("Login Component", () => {
     axios.post.mockResolvedValueOnce({
       data: { success: false, message: serverMessage },
     });
-    
+
     const { getInputs } = setup();
     fireEvent.change(getInputs().email, { target: { value: "john@example.com" } });
     fireEvent.change(getInputs().password, { target: { value: "wrong" } });

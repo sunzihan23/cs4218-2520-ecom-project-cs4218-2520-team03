@@ -21,13 +21,15 @@ export default {
 
   // only run these tests
   testMatch: [
-    "<rootDir>/client/src/pages/Auth/*.test.js",
     "<rootDir>/client/src/components/*.test.js",
-    "<rootDir>/client/src/pages/admin/*.test.js",
-    "<rootDir>/client/src/pages/user/*.test.js",
     "<rootDir>/client/src/pages/*.test.js",
+    "<rootDir>/client/src/pages/admin/*.test.js",
+    "<rootDir>/client/src/pages/Auth/*.test.js",
+    "<rootDir>/client/src/pages/user/*.test.js",
     "<rootDir>/client/src/context/*.test.js",
-    "<rootDir>/client/src/hooks/*.test.js",
+    "<rootDir>/client/src/hooks/useCategory.test.js",
+    "<rootDir>/client/src/components/Routes/Private.test.js",
+    "<rootDir>/client/src/components/Form/*.test.js",
   ],
 
   // jest code coverage
@@ -35,29 +37,25 @@ export default {
   collectCoverageFrom: [
     "client/src/pages/Auth/**",
     "client/src/context/**",
-    "client/src/components/Form/CategoryForm.js",
+    "client/src/components/Form/**",
+    "client/src/components/Routes/Private.js",
     "client/src/components/Footer.js",
     "client/src/components/Header.js",
     "client/src/components/Layout.js",
+    "client/src/components/Spinner.js",
+    "client/src/components/UserMenu.js",
     "client/src/components/AdminMenu.js",
+    "client/src/hooks/useCategory.js",
     "client/src/pages/admin/AdminDashboard.js",
     "client/src/pages/admin/CreateCategory.js",
     "client/src/pages/admin/CreateProduct.js",
     "client/src/pages/admin/Products.js",
     "client/src/pages/admin/UpdateProduct.js",
     "client/src/pages/admin/Users.js",
+    "client/src/pages/user/Dashboard.js",
+    "client/src/pages/user/Order.js",
     "client/src/pages/user/Profile.js",
-    "client/src/pages/Categories.js",
-    "client/src/pages/Contact.js",
-    "client/src/pages/Policy.js",
-    "client/src/pages/Pagenotfound.js",
-    "client/src/pages/About.js",
-    "client/src/pages/Search.js",
-    "client/src/hooks/useCategory.js",
-    "client/src/components/AdminMenu.js",
-    "client/src/pages/CategoryProduct.js",
-    "client/src/pages/ProductDetails.js",
-    "client/src/components/AdminMenu.js"
+    "client/src/pages/*.js",
   ],
   coverageThreshold: {
     global: {

@@ -12,10 +12,14 @@ describe("useCategory Hook", () => {
         jest.clearAllMocks();
     });
 
-    it("returns empty array initially", async () => {
-        axios.get.mockReturnValueOnce({ data: { category: [] } });
+    it("returns empty array initially that stays empty on [] return", async () => {
+        axios.get.mockResolvedValueOnce({ data: { category: [] } });
         const { result } = renderHook(() => useCategory());
 
+        expect(result.current).toEqual([]);
+        await waitFor(() => {
+            expect(axios.get).toHaveBeenCalledWith("/api/v1/category/get-category");
+        });
         expect(result.current).toEqual([]);
     });
 
@@ -25,12 +29,13 @@ describe("useCategory Hook", () => {
             { "name": "Books", "slug": "books" },
         ];
 
-        axios.get.mockReturnValueOnce({ data: { category: mockCategories } });
+        axios.get.mockResolvedValueOnce({ data: { category: mockCategories } });
         const { result } = renderHook(() => useCategory());
 
         await waitFor(() => {
             expect(result.current).toEqual(mockCategories);
         });
+        expect(axios.get).toHaveBeenCalledWith("/api/v1/category/get-category");
     });
 
     it("returns empty array on error ", async () => {
@@ -38,7 +43,7 @@ describe("useCategory Hook", () => {
         const { result } = renderHook(() => useCategory());
 
         await waitFor(() => {
-            expect(axios.get).toHaveBeenCalled();
+            expect(axios.get).toHaveBeenCalledWith("/api/v1/category/get-category");
         });
         expect(result.current).toEqual([]);
     });
