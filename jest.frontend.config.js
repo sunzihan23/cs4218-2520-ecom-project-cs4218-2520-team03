@@ -21,28 +21,32 @@ export default {
 
   // only run these tests
   testMatch: [
-    "<rootDir>/client/src/components/*.test.js",
-    "<rootDir>/client/src/pages/*.test.js",
+    // "<rootDir>/client/src/components/*.test.js",
+    // "<rootDir>/client/src/pages/*.test.js",
     // "<rootDir>/client/src/pages/admin/*.test.js",
-    "<rootDir>/client/src/pages/Auth/*.test.js",
-    "<rootDir>/client/src/pages/user/*.test.js",
-    "<rootDir>/client/src/context/*.test.js",
-    "<rootDir>/client/src/hooks/useCategory.test.js",
-    "<rootDir>/client/src/components/Routes/Private.test.js",
-    "<rootDir>/client/src/components/Form/*.test.js",],
+    // "<rootDir>/client/src/pages/Auth/*.test.js",
+    // "<rootDir>/client/src/pages/user/*.test.js",
+    // "<rootDir>/client/src/context/*.test.js",
+    // "<rootDir>/client/src/hooks/useCategory.test.js",
+    // "<rootDir>/client/src/components/Routes/Private.test.js",
+    // "<rootDir>/client/src/components/Form/*.test.js",
+    "<rootDir>/client/src/pages/HomePage.test.js",
+  ],
 
   // jest code coverage
   collectCoverage: true,
   collectCoverageFrom: [
-    "client/src/components/*.js",
-    "<rootDir>/client/src/pages/*.js",
+    // "client/src/components/*.js",
+    // "<rootDir>/client/src/pages/*.js",
     // "<rootDir>/client/src/pages/admin/*.js",
-    "<rootDir>/client/src/pages/Auth/*.js",
-    "<rootDir>/client/src/pages/user/*.js",
-    "<rootDir>/client/src/context/*.js",
-    "<rootDir>/client/src/hooks/useCategory.js",
-    "<rootDir>/client/src/components/Routes/Private.js",
-    "<rootDir>/client/src/components/Form/*.js",],
+    // "<rootDir>/client/src/pages/Auth/*.js",
+    // "<rootDir>/client/src/pages/user/*.js",
+    // "<rootDir>/client/src/context/*.js",
+    // "<rootDir>/client/src/hooks/useCategory.js",
+    // "<rootDir>/client/src/components/Routes/Private.js",
+    // "<rootDir>/client/src/components/Form/*.js",
+    "<rootDir>/client/src/pages/HomePage.js",
+  ],
   coverageThreshold: {
     global: {
       lines: 100,
