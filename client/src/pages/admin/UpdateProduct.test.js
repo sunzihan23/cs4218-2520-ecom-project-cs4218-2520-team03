@@ -177,7 +177,7 @@ describe("UpdateProduct Component", () => {
     mockFetchSuccess();
 
     axios.put.mockResolvedValueOnce({
-      data: { success: true, message: "Product updated successfully" },
+      data: { success: true },
     });
 
     const appendMock = jest.fn();
