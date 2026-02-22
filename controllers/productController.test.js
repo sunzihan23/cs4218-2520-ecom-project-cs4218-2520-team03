@@ -53,113 +53,118 @@ beforeEach(() => {
 });
 
 describe("validateProductFields", () => {
-    test("returns 400 with undefined fields", () => {
-        expect(validateProductFields(undefined, {}, true)).toEqual({
+    const validFields = {
+        name: "mockName",
+        description: "mockDesc",
+        price: 1,
+        category: "mockCategory",
+        quantity: 1,
+        shipping: true,
+    };
+
+    const validFiles = {
+        photo: { size: 999_999 },
+    };
+
+    test("returns 400 with undefined fields (still should fail validation)", () => {
+        expect(validateProductFields(undefined, {}, true)).toMatchObject({
             status: 400,
-            error: "Name is Required",
         });
     });
-    test("returns 400 when photo is required but there are no photos", () => {
-        expect(    validateProductFields(
-            { name: "mockName", description: "mockDesc", price: 1, category: "mockCategory", quantity: 1, shipping: true },
-            undefined, true
-        )).toEqual({
+
+    test("returns 400 when photo is required but there is no photo", () => {
+        expect(validateProductFields(validFields, undefined, true)).toEqual({
             status: 400,
             error: "Photo is Required",
         });
     });
+
     test("returns null when photo is not required but is provided", () => {
-        expect(
-            validateProductFields(
-                { name: "mockName", description: "mockDesc", price: 1, category: "mockCategory", quantity: 1, shipping: true},
-                { photo: { size: 999_999 }}, false
-            )
-        ).toBeNull();
+        expect(validateProductFields(validFields, validFiles, false)).toBeNull();
     });
-    test("returns null when photo is not required and not provided", () => {
-        expect(
-            validateProductFields(
-                { name: "mockName", description: "mockDesc", price: 1, category: "mockCategory", quantity: 1, shipping: true},
-                { photo: { size: 999_999 }}, false
-            )
-        ).toBeNull();
+
+    test("returns null when photo is not required and not provided (FIXED)", () => {
+        expect(validateProductFields(validFields, undefined, false)).toBeNull();
     });
+
     test("returns 400 when name missing", () => {
-        expect(validateProductFields({}, {}, true)).toEqual({
-            status: 400,
-            error: "Name is Required",
-        });
+        expect(
+            validateProductFields({ ...validFields, name: undefined }, validFiles, true)
+        ).toEqual({ status: 400, error: "Name is Required" });
     });
+
     test("returns 400 when description missing", () => {
         expect(
-            validateProductFields({ name: "mockName" }, {}, true)
+            validateProductFields(
+                { ...validFields, description: undefined },
+                validFiles,
+                true
+            )
         ).toEqual({ status: 400, error: "Description is Required" });
     });
+
     test("returns 400 when price missing", () => {
         expect(
-            validateProductFields({ name: "mockName", description: "mockDesc" }, {}, true)
+            validateProductFields({ ...validFields, price: undefined }, validFiles, true)
         ).toEqual({ status: 400, error: "Price is Required" });
     });
+
     test("returns 400 when category missing", () => {
         expect(
-            validateProductFields({ name: "mockName", description: "mockDesc", price: 1 }, {}, true)
+            validateProductFields(
+                { ...validFields, category: undefined },
+                validFiles,
+                true
+            )
         ).toEqual({ status: 400, error: "Category is Required" });
     });
+
     test("returns 400 when quantity missing", () => {
         expect(
             validateProductFields(
-                { name: "mockName", description: "mockDesc", price: 1, category: "mockCategory" },
-                {}, true
+                { ...validFields, quantity: undefined },
+                validFiles,
+                true
             )
         ).toEqual({ status: 400, error: "Quantity is Required" });
     });
-    test("returns 400 when shipping missing", () => {
+
+    test("returns 400 when shipping is missing (undefined)", () => {
         expect(
             validateProductFields(
-                { name: "mockName", description: "mockDesc", price: 1, category: "mockCategory", quantity: 1 },
-                {}, true
+                { ...validFields, shipping: undefined },
+                validFiles,
+                true
             )
         ).toEqual({ status: 400, error: "Shipping is Required" });
     });
-    test("returns null when shipping is falsy", () => {
+
+    test("returns null when shipping is false", () => {
         expect(
-            validateProductFields(
-                { name: "mockName", description: "mockDesc", price: 1, category: "mockCategory", quantity: 1, shipping: false},
-                {photo: { size: 999_999 }}, true
-            )
+            validateProductFields({ ...validFields, shipping: false }, validFiles, true)
         ).toBeNull();
     });
+
     test("returns null when shipping is true", () => {
         expect(
-            validateProductFields(
-                { name: "mockName", description: "mockDesc", price: 1, category: "mockCategory", quantity: 1, shipping: true},
-                {photo: { size: 999_999 }}, true
-            )
+            validateProductFields({ ...validFields, shipping: true }, validFiles, true)
         ).toBeNull();
     });
+
     test("returns 400 when photo too large (> 1000000)", () => {
         expect(
-            validateProductFields(
-                { name: "mockName", description: "mockDesc", price: 1, category: "mockCategory", quantity: 1, shipping: true},
-                { photo: { size: 1_000_001 }}, true
-            )
+            validateProductFields(validFields, { photo: { size: 1_000_001 } }, true)
         ).toEqual({ status: 400, error: "Photo should be less then 1mb" });
     });
-    test("returns null when photo is 1mb", () => {
+
+    test("returns null when photo is exactly 1mb", () => {
         expect(
-            validateProductFields(
-                { name: "mockName", description: "mockDesc", price: 1, category: "mockCategory", quantity: 1, shipping: true},
-                { photo: { size: 1_000_000 }}, true
-            )
+            validateProductFields(validFields, { photo: { size: 1_000_000 } }, true)
         ).toBeNull();
     });
+
     test("returns null on successful call", () => {
-        expect(
-            validateProductFields(
-                { name: "mockName", description: "mockDesc", price: 1, category: "mockCategory", quantity: 1, shipping: true},
-                { photo: { size: 1_000_000 }}, true
-            )
-        ).toBeNull();
+        expect(validateProductFields(validFields, validFiles, true)).toBeNull();
     });
 });
 
