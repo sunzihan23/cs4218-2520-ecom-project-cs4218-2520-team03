@@ -28,11 +28,15 @@ describe("authHelper", () => {
     });
 
     it("should return null as a safe fallback when hashing fails", async () => {
+      const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
       bcrypt.hash.mockRejectedValue(new Error("Internal error"));
 
       const result = await hashPassword("password123");
 
       expect(result).toBeNull(); 
+      expect(consoleSpy).toHaveBeenCalled();
+      
+      consoleSpy.mockRestore();
     });
   });
 
@@ -52,11 +56,15 @@ describe("authHelper", () => {
     });
 
     it("should return false when comparison fails or bcrypt throws", async () => {
+      const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
       bcrypt.compare.mockRejectedValue(new Error("Bcrypt failure"));
 
       const result = await comparePassword("any_password", "any_hash");
 
       expect(result).toBe(false);
+      expect(consoleSpy).toHaveBeenCalled();
+      
+      consoleSpy.mockRestore();
     });
   });
 });
