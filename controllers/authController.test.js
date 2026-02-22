@@ -213,6 +213,16 @@ describe("Auth Controller", () => {
       testController(req, res);
       expect(res.status).toHaveBeenCalledWith(500);
     });
+
+    it("should skip sending 500 error if headers are already sent", () => {
+      res.headersSent = true; 
+      res.status.mockImplementationOnce(() => {
+        throw new Error("Caught error after headers sent");
+      });
+
+      testController(req, res);
+      expect(res.status).not.toHaveBeenCalledWith(500);
+    });
   });
 
   //Seah Yi Xun Ryo A0252602R
