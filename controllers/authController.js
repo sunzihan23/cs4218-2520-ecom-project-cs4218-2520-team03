@@ -1,38 +1,21 @@
-// Sun Zihan, A0259581R
 import userModel from "../models/userModel.js";
-import orderModel from "../models/orderModel.js";
-
 import { comparePassword, hashPassword } from "./../helpers/authHelper.js";
 import JWT from "jsonwebtoken";
 
+// Sun Zihan, A0259581R
 export const registerController = async (req, res) => {
   try {
     const { name, email, password, phone, address, answer } = req.body;
-    
-    if (!name) {
-      return res.status(400).send({ success: false, message: "Name is required" });
-    }
-    if (!email) {
-      return res.status(400).send({ success: false, message: "Email is required" });
-    }
-    if (!password || password.length < 6) {
-      return res.status(400).send({ success: false, message: "Password is required and should be at least 6 characters long" });
-    }
-    if (!phone) {
-      return res.status(400).send({ success: false, message: "Phone number is required" });
-    }
-    if (!address) {
-      return res.status(400).send({ success: false, message: "Address is required" });
-    }
-    if (!answer) {
-      return res.status(400).send({ success: false, message: "Answer is required" });
+
+    if (!name || !email || !password || !phone || !address || !answer) {
+      return res.status(400).send({ success: false, message: "Missing required registration details" });
     }
 
-    const exisitingUser = await userModel.findOne({ email });
-    if (exisitingUser) {
-      return res.status(200).send({
+    const existingUser = await userModel.findOne({ email });
+    if (existingUser) {
+      return res.status(409).send({
         success: false,
-        message: "Already registered, please login",
+        message: "Email already registered, please login",
       });
     }
 
@@ -46,54 +29,39 @@ export const registerController = async (req, res) => {
       answer,
     }).save();
 
-    res.status(201).send({
+    return res.status(201).send({
       success: true,
-      message: "Registered successfully, please login", 
-      user,
+      message: "Registration successful, please login",
+      user: { _id: user._id, name: user.name, email: user.email },
     });
   } catch (error) {
-    console.log(error);
-    res.status(500).send({
-      success: false,
-      message: "Failed to register user",
-      error,
-    });
+    console.error(`Register Error: ${error.message}`);
+    return res.status(500).send({ success: false, message: "Internal server error during registration" });
   }
 };
 
-//POST LOGIN
+// Sun Zihan, A0259581R
 export const loginController = async (req, res) => {
   try {
     const { email, password } = req.body;
-    //validation
+
     if (!email || !password) {
-      return res.status(404).send({
-        success: false,
-        message: "Invalid email or password",
-      });
+      return res.status(400).send({ success: false, message: "Email and password are required" });
     }
-    //check user
+
     const user = await userModel.findOne({ email });
     if (!user) {
-      return res.status(404).send({
-        success: false,
-        message: "Email is not registered",
-      });
+      return res.status(401).send({ success: false, message: "Invalid email or password" });
     }
+
     const match = await comparePassword(password, user.password);
     if (!match) {
-      // Sun Zihan, A0259581R
-      // corrected status code to 401 unauthorised 
-      return res.status(401).send({
-        success: false,
-        message: "Invalid password",
-      });
+      return res.status(401).send({ success: false, message: "Invalid email or password" });
     }
-    //token
-    const token = await JWT.sign({ _id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "7d",
-    });
-    res.status(200).send({
+
+    const token = await JWT.sign({ _id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+
+    return res.status(200).send({
       success: true,
       message: "Login successful",
       user: {
@@ -107,72 +75,50 @@ export const loginController = async (req, res) => {
       token,
     });
   } catch (error) {
-    console.log(error);
-    res.status(500).send({
-      success: false,
-      message: "Login failed",
-      error,
-    });
+    console.error(`Login Error: ${error.message}`);
+    return res.status(500).send({ success: false, message: "Internal server error during login" });
   }
 };
 
-//forgotPasswordController
-
+// Sun Zihan, A0259581R
 export const forgotPasswordController = async (req, res) => {
   try {
     const { email, answer, newPassword } = req.body;
-    // Sun Zihan, A0259581R
-    // email, answer and password checks should return 400
-    if (!email) {
-      return res.status(400).send({ 
-        success: false,
-        message: "Email is required"
-      }); 
+
+    if (!email || !answer || !newPassword) {
+      return res.status(400).send({ success: false, message: "Missing required fields for password reset" });
     }
-    if (!answer) {
-      return res.status(400).send({ 
-        success: false,
-        message: "Answer is required"
-      });
-    }
-    if (!newPassword) {
-      return res.status(400).send({ 
-        success: false,
-        message: "New password is required" 
-      });
-    }
-    //check
+
     const user = await userModel.findOne({ email, answer });
-    //validation
     if (!user) {
-      return res.status(404).send({
-        success: false,
-        message: "Wrong email or answer",
-      });
+      return res.status(404).send({ success: false, message: "Incorrect email or security answer" });
     }
+
     const hashed = await hashPassword(newPassword);
     await userModel.findByIdAndUpdate(user._id, { password: hashed });
-    res.status(200).send({
+
+    return res.status(200).send({
       success: true,
       message: "Password has been reset successfully",
     });
   } catch (error) {
-    console.log(error);
-    res.status(500).send({
-      success: false,
-      message: "Something went wrong",
-      error,
-    });
+    console.error(`Forgot Password Error: ${error.message}`);
+    return res.status(500).send({ success: false, message: "Internal server error during password reset" });
   }
 };
 
-//test controller
+// Sun Zihan, A0259581R
 export const testController = (req, res) => {
   try {
-    res.send("Protected Routes");
+    return res.status(200).send({
+      success: true,
+      message: "Protected route accessed",
+    });
   } catch (error) {
-    console.log(error);
-    res.send({ error });
+    console.error(`Test Error: ${error.message}`);
+    if (!res.headersSent) {
+      return res.status(500).send({ success: false, message: "Server error" });
+    }
   }
 };
 
@@ -183,7 +129,7 @@ export const updateProfileController = async (req, res) => {
     const user = await userModel.findById(req.user._id);
     //password
     if (password && password.length < 6) {
-      return res.json({ error: "Passsword is required and should be 6 characters long" });
+      return res.json({ error: "Password is required and should be 6 characters long" });
     }
     const hashedPassword = password ? await hashPassword(password) : undefined;
     const updatedUser = await userModel.findByIdAndUpdate(
@@ -235,7 +181,7 @@ export const getAllOrdersController = async (req, res) => {
       .find({})
       .populate("products", "-photo")
       .populate("buyer", "name")
-      .sort({ createdAt: "-1" });
+      .sort({ createdAt: -1 });
     res.json(orders);
   } catch (error) {
     console.log(error);

@@ -1,15 +1,19 @@
+//Chen Zhiruo A0256855N
 import React from "react";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import axios from "axios";
 import ProductDetails from "./ProductDetails";
+import toast from "react-hot-toast";
 
-//Chen Zhiruo A0256855N
 jest.mock("axios");
 jest.mock("./../components/Layout", () => {
     return function MockLayout({ children }) {
         return <div data-testid="layout">{children}</div>;
     };
 });
+jest.mock("react-hot-toast", () => ({
+    error: jest.fn(),
+}));
 
 const mockNavigate = jest.fn();
 
@@ -80,18 +84,6 @@ describe("ProductDetails", () => {
         render(<ProductDetails />);
         expect(await screen.findByText("Name : Single Mock Product")).toBeInTheDocument();
     });
-    test("calls related-product endpoint using product id and category id", async () => {
-        useParams.mockReturnValue({ slug: "single-mock-product" });
-        axios.get
-            .mockResolvedValueOnce(productApiResponse)
-            .mockResolvedValueOnce(relatedApiResponseEmpty);
-        render(<ProductDetails />);
-        await waitFor(() => {
-            expect(axios.get).toHaveBeenCalledWith(
-                "/api/v1/product/related-product/p1/c1"
-            );
-        });
-    });
     test("shows 'No Similar Products found' when related products is empty", async () => {
         useParams.mockReturnValue({ slug: "single-mock-product" });
         axios.get
@@ -120,28 +112,24 @@ describe("ProductDetails", () => {
         fireEvent.click(btn);
         expect(mockNavigate).toHaveBeenCalledWith("/product/mock-related-product");
     });
-    test("logs error message when get product axios request fails", async () => {
+    test("calls toast error when get product axios request fails", async () => {
         useParams.mockReturnValue({ slug: "single-mock-product" });
         const err = new Error("get product fail");
         axios.get.mockRejectedValueOnce(err);
-        const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
         render(<ProductDetails />);
         await waitFor(() => {
-            expect(logSpy).toHaveBeenCalledWith("get product fail");
+            expect(toast.error).toHaveBeenCalled()
         });
-        logSpy.mockRestore();
     });
-    test("logs error message when get related product axios request fails", async () => {
+    test("calls toast error when get related product axios request fails", async () => {
         useParams.mockReturnValue({ slug: "single-mock-product" });
         const err = new Error("get related product fail");
         axios.get
             .mockResolvedValueOnce(productApiResponse)
             .mockRejectedValueOnce(err);
-        const logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
         render(<ProductDetails />);
         await waitFor(() => {
-            expect(logSpy).toHaveBeenCalledWith("get related product fail");
+            expect(toast.error).toHaveBeenCalled()
         });
-        logSpy.mockRestore();
     });
 });

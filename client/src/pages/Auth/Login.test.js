@@ -49,13 +49,13 @@ describe("Login Component", () => {
     const getInputs = () => ({
       email: utils.getByPlaceholderText(/enter your email/i),
       password: utils.getByPlaceholderText(/enter your password/i),
-      loginBtn: utils.getByText("LOGIN"),
-      forgotBtn: utils.getByText(/forgot password/i),
+      loginBtn: utils.getByRole("button", { name: /login/i }),
+      forgotBtn: utils.getByRole("button", { name: /forgot password/i }),
     });
     return { ...utils, getInputs };
   };
 
-  it("should validate and provide feedback for empty or malformed inputs", async () => {
+  it("should validate and provide inline feedback for empty or malformed inputs", () => {
     const { getInputs, getByText } = setup();
     const { email, loginBtn } = getInputs();
 
@@ -68,24 +68,25 @@ describe("Login Component", () => {
     expect(getByText(/please enter a valid email address/i)).toBeInTheDocument();
   });
 
-  it("should clear error messages immediately upon user correction", async () => {
-    const { getInputs, getByText, queryByText } = setup();
+  it("should clear error messages immediately upon user correction", () => {
+    const { getInputs, queryByText } = setup();
     const { email, password, loginBtn } = getInputs();
 
     fireEvent.click(loginBtn);
+    expect(queryByText(/email is required/i)).toBeInTheDocument();
 
-    fireEvent.change(email, { target: { value: "a@a.com" } });
+    fireEvent.change(email, { target: { value: "john@example.com" } });
     expect(queryByText(/email is required/i)).not.toBeInTheDocument();
 
-    fireEvent.change(password, { target: { value: "password" } });
+    fireEvent.change(password, { target: { value: "123456" } });
     expect(queryByText(/password is required/i)).not.toBeInTheDocument();
   });
 
-  it("should redirect and update local storage upon successful authentication", async () => {
+  it("should update auth context, local storage, and navigate upon success", async () => {
     const mockData = {
       success: true,
-      message: "Login Successful",
-      user: { name: "John Doe" },
+      message: "Welcome Back",
+      user: { name: "John" },
       token: "valid-token",
     };
     axios.post.mockResolvedValueOnce({ data: mockData });
@@ -98,8 +99,26 @@ describe("Login Component", () => {
     fireEvent.click(loginBtn);
 
     await waitFor(() => {
-      expect(localStorage.setItem).toHaveBeenCalledWith("auth", expect.stringContaining("valid-token"));
+      expect(mockSetAuth).toHaveBeenCalledWith(expect.objectContaining({
+        user: mockData.user,
+        token: mockData.token
+      }));
+      expect(localStorage.setItem).toHaveBeenCalledWith("auth", JSON.stringify(mockData));
+      expect(toast.success).toHaveBeenCalledWith("Welcome Back");
       expect(mockedNavigate).toHaveBeenCalledWith("/");
+    });
+  });
+
+  it("should use fallback success message when API response message is missing", async () => {
+    axios.post.mockResolvedValueOnce({ data: { success: true, user: {}, token: "" } });
+
+    const { getInputs } = setup();
+    fireEvent.change(getInputs().email, { target: { value: "john@example.com" } });
+    fireEvent.change(getInputs().password, { target: { value: "123456" } });
+    fireEvent.click(getInputs().loginBtn);
+
+    await waitFor(() => {
+      expect(toast.success).toHaveBeenCalledWith("Login successful");
     });
   });
 
@@ -108,7 +127,7 @@ describe("Login Component", () => {
     axios.post.mockResolvedValueOnce({ data: { success: true } });
 
     const { getInputs } = setup();
-    fireEvent.change(getInputs().email, { target: { value: "user@test.com" } });
+    fireEvent.change(getInputs().email, { target: { value: "john@example.com" } });
     fireEvent.change(getInputs().password, { target: { value: "123456" } });
     fireEvent.click(getInputs().loginBtn);
 
@@ -118,13 +137,13 @@ describe("Login Component", () => {
   });
 
   it("should display server-provided error messages for authentication failures", async () => {
-    const serverMessage = "Unauthorized Access";
+    const serverMessage = "Invalid email or password";
     axios.post.mockResolvedValueOnce({
       data: { success: false, message: serverMessage },
     });
 
     const { getInputs } = setup();
-    fireEvent.change(getInputs().email, { target: { value: "user@test.com" } });
+    fireEvent.change(getInputs().email, { target: { value: "john@example.com" } });
     fireEvent.change(getInputs().password, { target: { value: "wrong" } });
     fireEvent.click(getInputs().loginBtn);
 
@@ -133,21 +152,20 @@ describe("Login Component", () => {
     });
   });
 
-  it("should use appropriate fallbacks when the API provides no specific error details", async () => {
-    // Branch: res.data.success is false, but message is missing
+  it("should handle network rejections and missing message fallbacks", async () => {
     axios.post.mockResolvedValueOnce({ data: { success: false } });
-
     const { getInputs } = setup();
-    fireEvent.change(getInputs().email, { target: { value: "user@test.com" } });
+    fireEvent.change(getInputs().email, { target: { value: "john@example.com" } });
     fireEvent.change(getInputs().password, { target: { value: "123456" } });
     fireEvent.click(getInputs().loginBtn);
-
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Login failed"));
 
-    // Branch: axios rejection (Network level)
+    axios.post.mockRejectedValueOnce({ response: { data: { message: "Internal Error" } } });
+    fireEvent.click(getInputs().loginBtn);
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Internal Error"));
+
     axios.post.mockRejectedValueOnce(new Error());
     fireEvent.click(getInputs().loginBtn);
-
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Something went wrong"));
   });
 

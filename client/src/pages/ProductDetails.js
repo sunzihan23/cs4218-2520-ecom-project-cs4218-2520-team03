@@ -1,8 +1,11 @@
+//Chen Zhiruo A0256855N
+import toast from "react-hot-toast";
 import React, { useState, useEffect } from "react";
 import Layout from "./../components/Layout";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
 import "../styles/ProductDetailsStyles.css";
+
 
 const ProductDetails = () => {
   const params = useParams();
@@ -24,6 +27,7 @@ const ProductDetails = () => {
       getSimilarProduct(data?.product._id, data?.product.category._id);
     } catch (error) {
       console.log(error.message);
+      toast.error("Something went wrong with retrieving get product");
     }
   };
   //get similar product
@@ -35,6 +39,7 @@ const ProductDetails = () => {
       setRelatedProducts(data?.products);
     } catch (error) {
       console.log(error.message);
+      toast.error("Something went wrong with retrieving similar product");
     }
   };
   return (

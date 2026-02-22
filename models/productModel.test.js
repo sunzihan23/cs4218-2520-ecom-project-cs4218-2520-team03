@@ -1,7 +1,6 @@
+//Chen Zhiruo A0256855N
 import mongoose from "mongoose";
 import productModel from "./productModel.js"; // adjust path if needed
-
-//Chen Zhiruo A0256855N
 
 describe("Products model schema", () => {
     let validDoc;

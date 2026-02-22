@@ -133,3 +133,24 @@ To begin unit testing with Jest in your project, follow these steps:
      ```bash
      npm run test
      ```
+
+## 6. Task Allocation
+1. Chen Peiran
+2. Chen Zhiruo
+- Write unit tests for product controller (ProductController.js)
+- Write unit tests for product model (ProductModel.js)
+- Write unit tests for product details and category product (ProductDetails.js, CategoryProduct.js)
+- Write unit tests for admin admin product view (Products.js)
+3. Seah Yi Xun, Ryo
+- Write unit tests for auth controller (updateProfileController, getOrdersController, getAllOrdersController, orderStatusController in authController.js / authController.test.js)
+- Write unit tests for order model (orderModel.js)
+- Contribute to cart context and CartPage (context/cart.js, pages/CartPage.js and tests)
+- Write unit tests for user Orders page (pages/user/Orders.js)
+4. Sun Zihan
+- Write unit tests for user authentication and profile management views (Register.js, Login.js, Profile.js, ForgotPassword.js)
+- Write unit tests for auth infrastructure, including security helpers, authorization middlewares, and frontend context (authHelper.js, authMiddleware.js, auth.js)
+- Write unit tests for auth controller (registerController, loginController, forgotPasswordController, testController in authController.js)
+5. Trinh Hoai Song Thu
+- Write unit tests for Admin Dashboard (AdminMenu.js, AdminDashboard.js)
+- Write unit tests for Admin Actions (CategoryForm.js, CreateCategory.js, CreateProduct.js, UpdateProduct.js, categoryController.js)
+- Write unit tests for Admin View Users (Users.js)

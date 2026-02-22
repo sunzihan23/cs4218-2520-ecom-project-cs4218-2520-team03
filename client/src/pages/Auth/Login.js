@@ -18,8 +18,6 @@ const Login = () => {
 
   const validate = () => {
     let tempErrors = {};
-    
-    // Standard Email Regex (checks for @ and .domain)
     const emailRegex = /^\S+@\S+\.\S+$/;
 
     if (!email) {
@@ -39,10 +37,7 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!validate()) {
-      toast.error("Please fix the errors in the form");
-      return;
-    }
+    if (!validate()) return;
 
     try {
       const res = await axios.post("/api/v1/auth/login", { email, password });
@@ -81,8 +76,7 @@ const Login = () => {
                 if (errors.email) setErrors({ ...errors, email: "" });
               }}
               className={`form-control ${errors.email ? "is-invalid" : ""}`}
-              placeholder="Enter Your Email"
-              id="emailInput"
+              placeholder="Enter your email"
               required
             />
             {errors.email && <div className="invalid-feedback">{errors.email}</div>}
@@ -98,7 +92,6 @@ const Login = () => {
               }}
               className={`form-control ${errors.password ? "is-invalid" : ""}`}
               placeholder="Enter your password"
-              id="passwordInput"
               required
             />
             {errors.password && <div className="invalid-feedback">{errors.password}</div>}
