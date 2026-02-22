@@ -12,6 +12,8 @@ import {
 import userModel from "../models/userModel.js";
 import { hashPassword, comparePassword } from "../helpers/authHelper.js";
 import JWT from "jsonwebtoken";
+import orderModel from "../models/orderModel.js";
+import { createMockReq, createMockRes } from "../__tests__/helpers/mockHelpers.js";
 
 //Seah Yi Xun Ryo A0252602R, helper for orderModel.find().populate().populate() [and .sort()]
 /**
@@ -35,6 +37,7 @@ function createOrderFindChain(result, options = {}) {
 jest.mock("../models/userModel.js");
 jest.mock("../helpers/authHelper.js");
 jest.mock("jsonwebtoken");
+jest.mock("../models/orderModel.js");
 
 describe("Auth Controller", () => {
   let req, res;
@@ -45,6 +48,7 @@ describe("Auth Controller", () => {
     res = {
       status: jest.fn().mockReturnThis(),
       send: jest.fn().mockReturnThis(),
+      json: jest.fn().mockReturnThis(),
     };
     jest.spyOn(console, "error").mockImplementation(() => {});
   });
@@ -208,6 +212,16 @@ describe("Auth Controller", () => {
       
       testController(req, res);
       expect(res.status).toHaveBeenCalledWith(500);
+    });
+
+    it("should skip sending 500 error if headers are already sent", () => {
+      res.headersSent = true; 
+      res.status.mockImplementationOnce(() => {
+        throw new Error("Caught error after headers sent");
+      });
+
+      testController(req, res);
+      expect(res.status).not.toHaveBeenCalledWith(500);
     });
   });
 
