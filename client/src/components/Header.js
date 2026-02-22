@@ -89,9 +89,8 @@ const Header = () => {
               ) : (
                 <>
                   <li className="nav-item dropdown">
-                    <NavLink
+                    <NavLink to="#"
                       className="nav-link dropdown-toggle"
-                      href="#"
                       role="button"
                       data-bs-toggle="dropdown"
                       style={{ border: "none" }}
