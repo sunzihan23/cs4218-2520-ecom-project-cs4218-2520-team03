@@ -97,6 +97,8 @@ describe("Auth Context and useAuth Hook", () => {
   });
 
   it("should remain in default state if localStorage contains invalid data", () => {
+    const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    
     localStorage.setItem("auth", "corrupted-{json");
 
     const { getByTestId } = render(
@@ -107,5 +109,9 @@ describe("Auth Context and useAuth Hook", () => {
 
     expect(getByTestId("user").textContent).toBe("null");
     expect(getByTestId("token").textContent).toBe("empty");
+
+    expect(consoleSpy).toHaveBeenCalled();
+    
+    consoleSpy.mockRestore(); 
   });
 });
