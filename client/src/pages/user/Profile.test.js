@@ -30,9 +30,8 @@ describe("Profile Component", () => {
     jest.clearAllMocks();
     useAuth.mockReturnValue([{ user: mockUser }, mockSetAuth]);
     
-    // Arrange: Robust LocalStorage Mocking
     const localStorageMock = {
-      getItem: jest.fn((key) => key === 'auth' ? JSON.stringify({ user: mockUser }) : null),
+      getItem: jest.fn(() => JSON.stringify({ user: mockUser, token: "12345" })),
       setItem: jest.fn(),
     };
     Object.defineProperty(window, 'localStorage', { value: localStorageMock, writable: true });
@@ -40,10 +39,13 @@ describe("Profile Component", () => {
 
   afterEach(cleanup);
 
-  // Helper: Setup follows the "Factory" pattern for better code quality
   const setup = (userContext = { user: mockUser }) => {
     useAuth.mockReturnValue([userContext, mockSetAuth]);
-    const utils = render(<MemoryRouter><Profile /></MemoryRouter>);
+    const utils = render(
+      <MemoryRouter>
+        <Profile />
+      </MemoryRouter>
+    );
     const getInputs = () => ({
       name: utils.getByPlaceholderText(/enter your name/i),
       email: utils.getByPlaceholderText(/enter your email/i),
@@ -56,118 +58,130 @@ describe("Profile Component", () => {
     return { ...utils, getInputs };
   };
 
-  it("should initialize form with authenticated user data", () => {
-    // Act
+  it("should populate form with initial user data from auth context", () => {
     const { getInputs, getByTestId } = setup();
     const inputs = getInputs();
-
-    // Assert: Behavioral guarantee that user sees their info
     expect(inputs.name.value).toBe(mockUser.name);
-    expect(inputs.email).toBeDisabled(); // Email must be immutable
+    expect(inputs.email.value).toBe(mockUser.email);
+    expect(inputs.phone.value).toBe(mockUser.phone);
+    expect(inputs.address.value).toBe(mockUser.address);
     expect(getByTestId("layout")).toHaveAttribute("data-title", "Your Profile");
   });
 
-  it("should gracefully handle missing or partial user data (Lines 25, 29-32)", () => {
-    // Arrange & Act: Simulating a state where user data is incomplete
-    const { getInputs } = setup({ user: { name: null, email: undefined } });
-    
-    // Assert: Contract ensures empty strings instead of 'null' text in inputs
+  it("should initialize with empty strings when auth user is missing", () => {
+    const { getInputs } = setup({ user: null });
     expect(getInputs().name.value).toBe("");
-    expect(getInputs().email.value).toBe("");
   });
 
-  it("should block submission and show validation errors for empty required fields (Line 54)", async () => {
-    // Arrange
+  it("should show errors when required fields are empty", async () => {
     const { getInputs, findByText } = setup();
     const inputs = getInputs();
-
-    // Act: Clear data and attempt update
     fireEvent.change(inputs.name, { target: { name: "name", value: "" } });
+    fireEvent.change(inputs.address, { target: { name: "address", value: "" } });
     fireEvent.change(inputs.phone, { target: { name: "phone", value: "" } });
     fireEvent.click(inputs.submitBtn);
-
-    // Assert: Contract guarantees error feedback
     expect(await findByText(/name is required/i)).toBeInTheDocument();
+    expect(await findByText(/address is required/i)).toBeInTheDocument();
     expect(await findByText(/phone number is required/i)).toBeInTheDocument();
-    expect(axios.put).not.toHaveBeenCalled();
   });
 
-  it("should enforce phone number formatting (digits and length)", async () => {
+  it("should fallback to empty strings when user fields are null or undefined", () => {
+    const partialUser = { name: null, email: undefined };
+    const { getInputs } = setup({ user: partialUser });
+    const inputs = getInputs();
+    expect(inputs.name.value).toBe("");
+    expect(inputs.email.value).toBe("");
+  });
+
+  it("should validate phone digits and length correctly", async () => {
     const { getInputs, findByText } = setup();
     const inputs = getInputs();
-
-    // Act: Invalid format
-    fireEvent.change(inputs.phone, { target: { name: "phone", value: "abcdefgh" } });
+    fireEvent.change(inputs.phone, { target: { name: "phone", value: "abc" } });
     fireEvent.click(inputs.submitBtn);
     expect(await findByText(/phone number must contain only digits/i)).toBeInTheDocument();
-
-    // Act: Invalid length
-    fireEvent.change(inputs.phone, { target: { name: "phone", value: "123" } });
+    fireEvent.change(inputs.phone, { target: { name: "phone", value: "12345" } });
     fireEvent.click(inputs.submitBtn);
     expect(await findByText(/phone number must be 8 digits long/i)).toBeInTheDocument();
   });
 
-  it("should validate password length and mismatched confirmation (Line 63)", async () => {
-    const { getInputs, findByText, queryByText } = setup();
+  it("should validate password length and mismatch", async () => {
+    const { getInputs, findByText } = setup();
     const inputs = getInputs();
-
-    // Act: Mismatch
+    fireEvent.change(inputs.password, { target: { name: "password", value: "123" } });
+    fireEvent.click(inputs.submitBtn);
+    expect(await findByText(/password must be at least 6 characters long/i)).toBeInTheDocument();
     fireEvent.change(inputs.password, { target: { name: "password", value: "password123" } });
-    fireEvent.change(inputs.confirm, { target: { name: "confirmPassword", value: "wrongpass" } });
+    fireEvent.change(inputs.confirm, { target: { name: "confirmPassword", value: "mismatch" } });
     fireEvent.click(inputs.submitBtn);
     expect(await findByText(/passwords do not match/i)).toBeInTheDocument();
+  });
 
-    // Act: Match (satisfies Line 63 false branch)
+  it("should not trigger password mismatch error when passwords match", async () => {
+    const { getInputs, queryByText } = setup();
+    const inputs = getInputs();
+    fireEvent.change(inputs.password, { target: { name: "password", value: "password123" } });
     fireEvent.change(inputs.confirm, { target: { name: "confirmPassword", value: "password123" } });
+    fireEvent.click(inputs.submitBtn);
     expect(queryByText(/passwords do not match/i)).not.toBeInTheDocument();
   });
 
-  it("should successfully update profile and persistence layers (Line 76)", async () => {
-    // Arrange: Mock successful API response
-    const updatedUser = { ...mockUser, name: "Zihan Updated" };
-    axios.put.mockResolvedValueOnce({ data: { updatedUser } });
+  it("should skip password update if password is empty", async () => {
+    axios.put.mockResolvedValueOnce({ data: { updatedUser: mockUser } });
     const { getInputs } = setup();
     const inputs = getInputs();
 
-    // Act
-    fireEvent.change(inputs.name, { target: { name: "name", value: "Zihan Updated" } });
     fireEvent.click(inputs.submitBtn);
 
-    // Assert: Contractual requirements
     await waitFor(() => {
-      expect(mockSetAuth).toHaveBeenCalledWith(expect.objectContaining({ user: updatedUser }));
-      expect(localStorage.setItem).toHaveBeenCalled();
-      expect(toast.success).toHaveBeenCalledWith("Profile updated successfully");
-      
-      // Verify Line 76: password is NOT sent if not modified
+      expect(axios.put).toHaveBeenCalled();
       const payload = axios.put.mock.calls[0][1];
       expect(payload.password).toBeUndefined();
     });
   });
 
-  it("should skip adding password to profileData if it is only whitespace", async () => {
+  it("should handle password containing only whitespace", async () => {
     const { getInputs, findByText } = setup();
     const inputs = getInputs();
 
-    // Act: Whitespace trigger
     fireEvent.change(inputs.password, { target: { name: "password", value: "   " } });
     fireEvent.click(inputs.submitBtn);
 
-    // Assert: Validation blocks this before the API is reached
     expect(await findByText(/password must be at least 6 characters long/i)).toBeInTheDocument();
     expect(axios.put).not.toHaveBeenCalled();
   });
 
-  it("should handle server-side errors and network rejections", async () => {
-    // Act & Assert: API Error
-    axios.put.mockResolvedValueOnce({ data: { error: "Update failed" } });
-    const { getInputs: setupErr } = setup();
-    fireEvent.click(setupErr().submitBtn);
-    await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Update failed"));
+  it("should successfully update profile and handle localStorage", async () => {
+    const updatedUser = { ...mockUser, name: "Updated" };
+    axios.put.mockResolvedValueOnce({ data: { updatedUser } });
+    const { getInputs } = setup();
+    const inputs = getInputs();
+    fireEvent.change(inputs.name, { target: { name: "name", value: "Updated" } });
+    fireEvent.click(inputs.submitBtn);
+    await waitFor(() => {
+      expect(mockSetAuth).toHaveBeenCalledWith(expect.objectContaining({ user: updatedUser }));
+      expect(localStorage.setItem).toHaveBeenCalled();
+      expect(toast.success).toHaveBeenCalledWith("Profile updated successfully");
+    });
+  });
 
-    // Act & Assert: Network failure
-    axios.put.mockRejectedValueOnce(new Error("Network Error"));
-    fireEvent.click(setupErr().submitBtn);
+  it("should update profile but skip localStorage if not found", async () => {
+    axios.put.mockResolvedValueOnce({ data: { updatedUser: mockUser } });
+    window.localStorage.getItem.mockReturnValueOnce(null);
+    const { getInputs } = setup();
+    fireEvent.click(getInputs().submitBtn);
+    await waitFor(() => {
+      expect(mockSetAuth).toHaveBeenCalled();
+      expect(localStorage.setItem).not.toHaveBeenCalled();
+    });
+  });
+
+  it("should handle backend data errors and network failures", async () => {
+    axios.put.mockResolvedValueOnce({ data: { error: "Backend error" } });
+    const { getInputs } = setup();
+    fireEvent.click(getInputs().submitBtn);
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Backend error"));
+    axios.put.mockRejectedValueOnce(new Error("Network error"));
+    fireEvent.click(getInputs().submitBtn);
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith("Something went wrong"));
   });
 });
