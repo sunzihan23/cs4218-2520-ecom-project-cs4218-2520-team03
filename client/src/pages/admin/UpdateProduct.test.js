@@ -45,6 +45,44 @@ const mockProduct = {
   category: { _id: "2", name: "Clothing" },
 };
 
+const getCategorySelect = () => screen.getAllByRole("combobox")[0];
+const getShippingSelect = () => screen.getAllByRole("combobox")[1];
+
+const selectCategory = (value) =>
+  fireEvent.change(getCategorySelect(), { target: { value } });
+
+const selectShipping = (value) =>
+  fireEvent.change(getShippingSelect(), { target: { value } });
+
+const mockFetchSuccess = (product = mockProduct, categories = mockCategories) => {
+  axios.get
+    .mockResolvedValueOnce({ data: { product } })
+    .mockResolvedValueOnce({ data: { success: true, category: categories } });
+};
+
+const mockFetchSampleProduct = () => {
+  axios.get
+    .mockResolvedValueOnce({
+      data: {
+        product: {
+          _id: "1",
+          name: "Book",
+          description: "Sample Book",
+          price: "100",
+          quantity: "90",
+          shipping: true,
+          category: { _id: "c1" },
+        },
+      },
+    })
+    .mockResolvedValueOnce({ data: { success: true, category: [] } });
+};
+
+const mockPrompt = (answer) => {
+  const spy = jest.spyOn(window, "prompt").mockReturnValue(answer);
+  return () => spy.mockRestore();
+};
+
 jest.mock("antd", () => {
   const antd = jest.requireActual("antd");
   const Select = ({ children, onChange, value, ...props }) => {
@@ -78,6 +116,7 @@ jest.mock("antd", () => {
 describe("UpdateProduct Component", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    global.URL.createObjectURL = jest.fn(() => "mock-url");
   });
 
   const renderComponent = () =>
@@ -86,24 +125,14 @@ describe("UpdateProduct Component", () => {
         <UpdateProduct />
       </BrowserRouter>,
     );
+  const renderAndWaitLoaded = async () => {
+    renderComponent();
+    await waitFor(() =>
+      expect(screen.getByText("UPDATE PRODUCT")).toBeInTheDocument()
+    );
+  };
 
   test("renders the submission form with all fields", async () => {
-    axios.get
-      .mockResolvedValueOnce({
-        data: {
-          product: {
-            _id: "1",
-            name: "",
-            description: "",
-            price: "",
-            quantity: "",
-            shipping: false,
-            category: { _id: "c1" },
-          },
-        },
-      })
-      .mockResolvedValueOnce({ data: { success: true, category: [] } });
-
     renderComponent();
 
     await waitFor(() => {
@@ -122,12 +151,7 @@ describe("UpdateProduct Component", () => {
   });
 
   test("should fetch and display product details", async () => {
-    axios.get
-      .mockResolvedValueOnce({ data: { product: mockProduct } })
-      .mockResolvedValueOnce({
-        data: { success: true, category: mockCategories },
-      });
-
+    mockFetchSuccess();
     renderComponent();
 
     await waitFor(() => {
@@ -140,7 +164,6 @@ describe("UpdateProduct Component", () => {
 
   test("shows error toast on fetch failure", async () => {
     axios.get.mockRejectedValueOnce(new Error("Fetch failed"));
-
     renderComponent();
 
     await waitFor(() => {
@@ -151,15 +174,10 @@ describe("UpdateProduct Component", () => {
   });
 
   test("should handle update product form submission", async () => {
-    global.URL.createObjectURL = jest.fn(() => "mock-url");
-    axios.get
-      .mockResolvedValueOnce({ data: { product: mockProduct } })
-      .mockResolvedValueOnce({
-        data: { success: true, category: mockCategories },
-      });
+    mockFetchSuccess();
 
     axios.put.mockResolvedValueOnce({
-      data: { success: true, message: "Product updated successfully" },
+      data: { success: true },
     });
 
     const appendMock = jest.fn();
@@ -184,10 +202,8 @@ describe("UpdateProduct Component", () => {
       target: { value: "20" },
     });
 
-    const [categorySelect, shippingSelect] = screen.getAllByRole("combobox");
-
-    fireEvent.change(categorySelect, { target: { value: "2" } });
-    fireEvent.change(shippingSelect, { target: { value: "true" } });
+    selectCategory("2");
+    selectShipping("true");
     const file = new File(["photo"], "photo.png", { type: "image/png" });
     const uploadLabel = screen.getByText("Upload Photo");
     const input = uploadLabel
@@ -217,14 +233,10 @@ describe("UpdateProduct Component", () => {
   });
 
   test("should handle product deletion", async () => {
-    axios.get
-      .mockResolvedValueOnce({ data: { product: mockProduct } })
-      .mockResolvedValueOnce({
-        data: { success: true, category: mockCategories },
-      });
+    mockFetchSuccess();
 
     axios.delete.mockResolvedValueOnce({ data: { success: true } });
-    const promptSpy = jest.spyOn(window, "prompt").mockReturnValue("Yes");
+    const restore = mockPrompt("Yes");
 
     renderComponent();
 
@@ -242,18 +254,12 @@ describe("UpdateProduct Component", () => {
       expect(mockNavigate).toHaveBeenCalledWith("/dashboard/admin/products");
     });
 
-    promptSpy.mockRestore();
+    restore();
   });
 
   test("shows error toast on delete cancellation", async () => {
-    axios.get
-      .mockResolvedValueOnce({ data: { product: mockProduct } })
-      .mockResolvedValueOnce({
-        data: { success: true, category: mockCategories },
-      });
-
-    const promptSpy = jest.spyOn(window, "prompt").mockReturnValue("No");
-
+    mockFetchSuccess();
+    const restore = mockPrompt("No");
     renderComponent();
 
     await waitFor(() => {
@@ -266,30 +272,12 @@ describe("UpdateProduct Component", () => {
       expect(toast.error).toHaveBeenCalledWith("Product deletion canceled.");
     });
 
-    promptSpy.mockRestore();
+    restore();
   });
 
   test("shows error toast on delete failure", async () => {
-    axios.get
-      .mockResolvedValueOnce({
-        data: {
-          product: {
-            name: "Bookk",
-            _id: "1",
-            description: "d",
-            price: 1,
-            quantity: 1,
-            shipping: false,
-            category: { _id: "c1" },
-          },
-        },
-      })
-      .mockResolvedValueOnce({
-        data: { success: true, category: mockCategories },
-      });
-
     axios.delete.mockRejectedValueOnce(new Error("Delete failed"));
-    jest.spyOn(window, "prompt").mockReturnValue("Yes");
+    const restore = mockPrompt("Yes");
 
     renderComponent();
 
@@ -302,22 +290,15 @@ describe("UpdateProduct Component", () => {
     await waitFor(() => {
       expect(toast.error).toHaveBeenCalledWith("Something went wrong");
     });
+    restore();
   });
 
   test("shows error toast on missing fields when update product", async () => {
-    axios.get
-      .mockResolvedValueOnce({ data: { product: mockProduct } })
-      .mockResolvedValueOnce({
-        data: { success: true, category: mockCategories },
-      });
+    mockFetchSuccess();
 
     axios.put.mockRejectedValueOnce(new Error("Update failed"));
 
-    renderComponent();
-
-    await waitFor(() => {
-      expect(screen.getByText("UPDATE PRODUCT")).toBeInTheDocument();
-    });
+    renderAndWaitLoaded();
 
     fireEvent.click(screen.getByText("UPDATE PRODUCT"));
 
@@ -329,12 +310,7 @@ describe("UpdateProduct Component", () => {
   });
 
   test("shows error toast on invalid price update product", async () => {
-    global.URL.createObjectURL = jest.fn(() => "mock-url");
-    axios.get
-      .mockResolvedValueOnce({ data: { product: mockProduct } })
-      .mockResolvedValueOnce({
-        data: { success: true, category: mockCategories },
-      });
+    mockFetchSuccess();
 
     axios.put.mockRejectedValueOnce(new Error("Update failed"));
 
@@ -363,12 +339,7 @@ describe("UpdateProduct Component", () => {
   });
 
   test("shows error toast on invalid quantity update product", async () => {
-    global.URL.createObjectURL = jest.fn(() => "mock-url");
-    axios.get
-      .mockResolvedValueOnce({ data: { product: mockProduct } })
-      .mockResolvedValueOnce({
-        data: { success: true, category: mockCategories },
-      });
+    mockFetchSuccess();
 
     axios.put.mockRejectedValueOnce(new Error("Update failed"));
 
@@ -399,39 +370,26 @@ describe("UpdateProduct Component", () => {
   });
 
   test("updates shipping value based on selected option", async () => {
-    axios.get
-      .mockResolvedValueOnce({ data: { product: mockProduct } })
-      .mockResolvedValueOnce({
-        data: { success: true, category: mockCategories },
-      });
-
+    mockFetchSuccess();
     renderComponent();
 
     await waitFor(() => {
       expect(screen.getByDisplayValue("Shirt")).toBeInTheDocument();
     });
 
-    const selects = screen.getAllByRole("combobox");
-    const shippingSelect = selects[1];
-
-    fireEvent.change(shippingSelect, { target: { value: "true" } });
+    selectShipping("true");
     await waitFor(() => {
-      expect(shippingSelect.value).toBe("true");
+      expect(getShippingSelect()).toHaveValue("true");
     });
 
-    fireEvent.change(shippingSelect, { target: { value: "false" } });
+    selectShipping("false");
     await waitFor(() => {
-      expect(shippingSelect.value).toBe("false");
+      expect(getShippingSelect()).toHaveValue("false");
     });
   });
 
   test("shows error toast on update failure", async () => {
-    global.URL.createObjectURL = jest.fn(() => "mock-url");
-    axios.get
-      .mockResolvedValueOnce({ data: { product: mockProduct } })
-      .mockResolvedValueOnce({
-        data: { success: true, category: mockCategories },
-      });
+    mockFetchSuccess();
 
     axios.put.mockRejectedValueOnce(new Error("Update failed"));
 
@@ -463,23 +421,7 @@ describe("UpdateProduct Component", () => {
     });
   });
   test("shows error toast when missing photo on form submission", async () => {
-    
-    axios.get
-      .mockResolvedValueOnce({
-        data: {
-          product: {
-            _id: "1",
-            name: "",
-            description: "",
-            price: "",
-            quantity: "",
-            shipping: false,
-            category: { _id: "c1" },
-          },
-        },
-      })
-      .mockResolvedValueOnce({ data: { success: true, category: [] } });
-
+    mockFetchSampleProduct();
     renderComponent();
 
     await waitFor(() => {
@@ -509,23 +451,7 @@ describe("UpdateProduct Component", () => {
   });
 
   test("shows error toast when photo size exceeds limit on form submission", async () => {  
-    global.URL.createObjectURL = jest.fn(() => "mock-url");
-    axios.get
-      .mockResolvedValueOnce({
-        data: {
-          product: {
-            _id: "1",
-            name: "",
-            description: "",
-            price: "",
-            quantity: "",
-            shipping: false,
-            category: { _id: "c1" },
-          },
-        },
-      })
-      .mockResolvedValueOnce({ data: { success: true, category: [] } });
-
+    mockFetchSampleProduct();
     renderComponent();
 
     await waitFor(() => {
