@@ -9,46 +9,56 @@ import axios from "axios";
 const Profile = () => {
   const [auth, setAuth] = useAuth();
   
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [phone, setPhone] = useState("");
-  const [address, setAddress] = useState("");
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    phone: "",
+    address: "",
+  });
   const [errors, setErrors] = useState({});
+
+  const { name, email, password, confirmPassword, phone, address } = formData;
 
   useEffect(() => {
     if (auth?.user) {
       const { email, name, phone, address } = auth.user;
-      setName(name || "");
-      setPhone(phone || "");
-      setEmail(email || "");
-      setAddress(address || "");
+      setFormData((prev) => ({
+        ...prev,
+        name: name || "",
+        email: email || "",
+        phone: phone || "",
+        address: address || "",
+      }));
     }
   }, [auth?.user]);
 
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+    if (errors[name]) {
+      setErrors({ ...errors, [name]: "" });
+    }
+  };
+
   const validate = () => {
     let tempErrors = {};
-    
     if (!name.trim()) tempErrors.name = "Name is required";
     if (!address.trim()) tempErrors.address = "Address is required";
     
     const phoneRegex = /^\d+$/; 
     if (!phone) {
       tempErrors.phone = "Phone number is required";
-    } else if (!phoneRegex.test(phone)) {
-      tempErrors.phone = "Phone number must contain only digits";
-    } else if (phone.length !== 8) {
-      tempErrors.phone = "Phone number must be 8 digits long";
+    } else if (!phoneRegex.test(phone) || phone.length !== 8) {
+      tempErrors.phone = phoneRegex.test(phone) 
+        ? "Phone number must be 8 digits long" 
+        : "Phone number must contain only digits";
     }
   
     if (password) {
-      if (password.length < 6) {
-        tempErrors.password = "Password must be at least 6 characters long";
-      }
-      if (password !== confirmPassword) {
-        tempErrors.confirmPassword = "Passwords do not match";
-      }
+      if (password.length < 6) tempErrors.password = "Password must be at least 6 characters long";
+      if (password !== confirmPassword) tempErrors.confirmPassword = "Passwords do not match";
     }
   
     setErrors(tempErrors);
@@ -57,14 +67,11 @@ const Profile = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!validate()) return;
 
     try {
       const profileData = { name, email, phone, address };
-      if (password && password.trim().length > 0) {
-        profileData.password = password;
-      }
+      if (password?.trim()) profileData.password = password;
 
       const { data } = await axios.put("/api/v1/auth/profile", profileData);
 
@@ -74,20 +81,17 @@ const Profile = () => {
         const updatedUser = data?.updatedUser;
         setAuth({ ...auth, user: updatedUser });
 
-        let ls = localStorage.getItem("auth");
+        let ls = JSON.parse(localStorage.getItem("auth"));
         if (ls) {
-          ls = JSON.parse(ls);
           ls.user = updatedUser;
           localStorage.setItem("auth", JSON.stringify(ls));
         }
 
-        setPassword(""); 
-        setConfirmPassword(""); 
+        setFormData((prev) => ({ ...prev, password: "", confirmPassword: "" }));
         toast.success("Profile updated successfully");
       }
     } catch (error) {
-      const errorMsg = error.response?.data?.message || "Something went wrong";
-      toast.error(errorMsg);
+      toast.error(error.response?.data?.message || "Something went wrong");
     }
   };
 
@@ -95,98 +99,35 @@ const Profile = () => {
     <Layout title={"Your Profile"}>
       <div className="container-fluid m-3 p-3">
         <div className="row">
-          <div className="col-md-3">
-            <UserMenu />
-          </div>
+          <div className="col-md-3"><UserMenu /></div>
           <div className="col-md-9">
             <div className="form-container">
               <form onSubmit={handleSubmit} noValidate>
                 <h4 className="title">USER PROFILE</h4>
                 
-                <div className="mb-3">
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => {
-                      setName(e.target.value);
-                      if (errors.name) setErrors({ ...errors, name: "" });
-                    }}
-                    className={`form-control ${errors.name ? "is-invalid" : ""}`}
-                    placeholder="Enter your name"
-                    autoFocus
-                  />
-                  {errors.name && <div className="invalid-feedback">{errors.name}</div>}
-                </div>
+                {[
+                  { name: "name", type: "text", placeholder: "Enter your name", val: name },
+                  { name: "email", type: "email", placeholder: "Enter your email", val: email, disabled: true },
+                  { name: "password", type: "password", placeholder: "Enter your new password", val: password },
+                  { name: "confirmPassword", type: "password", placeholder: "Confirm your new password", val: confirmPassword },
+                  { name: "phone", type: "text", placeholder: "Enter your phone", val: phone },
+                  { name: "address", type: "text", placeholder: "Enter your address", val: address },
+                ].map((field) => (
+                  <div className="mb-3" key={field.name}>
+                    <input
+                      type={field.type}
+                      name={field.name}
+                      value={field.val}
+                      onChange={handleChange}
+                      className={`form-control ${errors[field.name] ? "is-invalid" : ""}`}
+                      placeholder={field.placeholder}
+                      disabled={field.disabled}
+                    />
+                    {errors[field.name] && <div className="invalid-feedback">{errors[field.name]}</div>}
+                  </div>
+                ))}
 
-                <div className="mb-3">
-                  <input
-                    type="email"
-                    value={email}
-                    className="form-control"
-                    placeholder="Enter your email"
-                    disabled
-                  />
-                </div>
-
-                <div className="mb-3">
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                      if (errors.password) setErrors({ ...errors, password: "" });
-                    }}
-                    className={`form-control ${errors.password ? "is-invalid" : ""}`}
-                    placeholder="Enter your new password"
-                  />
-                  {errors.password && <div className="invalid-feedback">{errors.password}</div>}
-                </div>
-
-                <div className="mb-3">
-                  <input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => {
-                      setConfirmPassword(e.target.value);
-                      if (errors.confirmPassword) setErrors({ ...errors, confirmPassword: "" });
-                    }}
-                    className={`form-control ${errors.confirmPassword ? "is-invalid" : ""}`}
-                    placeholder="Confirm your new password"
-                  />
-                  {errors.confirmPassword && <div className="invalid-feedback">{errors.confirmPassword}</div>}
-                </div>
-
-                <div className="mb-3">
-                  <input
-                    type="text"
-                    value={phone}
-                    onChange={(e) => {
-                      setPhone(e.target.value);
-                      if (errors.phone) setErrors({ ...errors, phone: "" });
-                    }}
-                    className={`form-control ${errors.phone ? "is-invalid" : ""}`}
-                    placeholder="Enter your phone"
-                  />
-                  {errors.phone && <div className="invalid-feedback">{errors.phone}</div>}
-                </div>
-
-                <div className="mb-3">
-                  <input
-                    type="text"
-                    value={address}
-                    onChange={(e) => {
-                      setAddress(e.target.value);
-                      if (errors.address) setErrors({ ...errors, address: "" });
-                    }}
-                    className={`form-control ${errors.address ? "is-invalid" : ""}`}
-                    placeholder="Enter your address"
-                  />
-                  {errors.address && <div className="invalid-feedback">{errors.address}</div>}
-                </div>
-
-                <button type="submit" className="btn btn-primary">
-                  UPDATE
-                </button>
+                <button type="submit" className="btn btn-primary">UPDATE</button>
               </form>
             </div>
           </div>
