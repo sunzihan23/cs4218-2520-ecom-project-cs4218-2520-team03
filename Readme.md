@@ -1,7 +1,9 @@
 # CS4218 Project - Virtual Vault
 
 ## MS1 CI URL
-
+Run: https://github.com/cs4218/cs4218-2520-ecom-project-cs4218-2520-team03/actions/runs/22290375457
+- Frontend Job: https://github.com/cs4218/cs4218-2520-ecom-project-cs4218-2520-team03/actions/runs/22290375457/job/64476448447
+- Backend Job: https://github.com/cs4218/cs4218-2520-ecom-project-cs4218-2520-team03/actions/runs/22290375457/job/64476448473
 
 ## 1. Project Introduction
 
