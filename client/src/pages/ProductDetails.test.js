@@ -11,8 +11,16 @@ jest.mock("./../components/Layout", () => {
         return <div data-testid="layout">{children}</div>;
     };
 });
+
 jest.mock("react-hot-toast", () => ({
     error: jest.fn(),
+    success: jest.fn(),
+}));
+
+const mockSetCart = jest.fn();
+
+jest.mock("../context/cart", () => ({
+    useCart: () => [[], mockSetCart],
 }));
 
 const mockNavigate = jest.fn();
@@ -120,6 +128,63 @@ describe("ProductDetails", () => {
         await waitFor(() => {
             expect(toast.error).toHaveBeenCalled()
         });
+    });
+    test("clicking main 'ADD TO CART' adds product to cart", async () => {
+        useParams.mockReturnValue({ slug: "single-mock-product" });
+
+        axios.get
+            .mockResolvedValueOnce(productApiResponse)
+            .mockResolvedValueOnce(relatedApiResponseEmpty);
+
+        const setItemSpy = jest.spyOn(Storage.prototype, "setItem");
+
+        render(<ProductDetails />);
+
+        await screen.findByText("Name : Single Mock Product");
+        const addButton = await screen.findByRole("button", {
+            name: /^add to cart$/i,
+        });
+
+        fireEvent.click(addButton);
+
+        expect(mockSetCart).toHaveBeenCalledWith([
+            productApiResponse.data.product,
+        ]);
+
+        expect(setItemSpy).toHaveBeenCalledWith(
+            "cart",
+            JSON.stringify([productApiResponse.data.product])
+        );
+
+        expect(toast.success).toHaveBeenCalledWith("Item Added to cart");
+    });
+    test("clicking related product 'ADD TO CART' adds related product to cart", async () => {
+        useParams.mockReturnValue({ slug: "single-mock-product" });
+
+        axios.get
+            .mockResolvedValueOnce(productApiResponse)
+            .mockResolvedValueOnce(relatedApiResponseWithItems);
+
+        const setItemSpy = jest.spyOn(Storage.prototype, "setItem");
+
+        render(<ProductDetails />);
+        await screen.findByText("Mock Related Product");
+        const buttons = await screen.findAllByRole("button", {
+            name: /add to cart/i,
+        });
+
+        fireEvent.click(buttons[1]);
+
+        expect(mockSetCart).toHaveBeenCalledWith([
+            relatedApiResponseWithItems.data.products[0],
+        ]);
+
+        expect(setItemSpy).toHaveBeenCalledWith(
+            "cart",
+            JSON.stringify([relatedApiResponseWithItems.data.products[0]])
+        );
+
+        expect(toast.success).toHaveBeenCalledWith("Item Added to cart");
     });
     test("calls toast error when get related product axios request fails", async () => {
         useParams.mockReturnValue({ slug: "single-mock-product" });
